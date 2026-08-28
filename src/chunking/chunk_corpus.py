@@ -49,7 +49,7 @@ def chunk(
     suffix = Path(file_path).suffix.lower()
     if suffix == ".py":
         return chunk_python(text,file_path, max_chunk_size)
-    if suffix in {".md", ".txt"}:
+    if suffix in {".md", ".rst", ".txt"}:
         return chunk_markdown(text, file_path, max_chunk_size)
     return chunk_lines(text, file_path, max_chunk_size)
     
