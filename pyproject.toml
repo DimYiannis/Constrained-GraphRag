@@ -1,0 +1,13 @@
+[project]
+name = "constrained-graphrag"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "bm25s>=0.3.10",
+    "tqdm>=4.68.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
