@@ -5,6 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
 ![bm25s](https://img.shields.io/badge/bm25s-lexical%20retrieval-orange)
+![Outlines](https://img.shields.io/badge/Outlines-constrained%20decoding-9146FF)
 
 **Finding the right ~2000 characters out of 28,246 chunks of the vLLM codebase via BM25.**
 
@@ -16,7 +17,7 @@
 
 Constrained GraphRAG combines lexical-first retrieval (BM25) with **schema-constrained knowledge graph extraction** over the **vLLM 0.10.1** codebase (~2,800 files, docs + Python source).
 
-The core idea: entity/relationship extraction from source chunks is done by **Qwen3-0.6B** — a small model, not a frontier one — made trustworthy for this job through **grammar-constrained decoding**. Rather than asking the model to produce JSON and hoping it matches a schema, its logits are masked at every generation step so only schema-conforming output is ever sampled. Malformed or duplicate-entity output (`"Acme Corp"` vs `"Acme Corporation"`) becomes structurally impossible rather than something to catch after the fact — which is what makes a 0.6B model viable for structured extraction at all. The resulting graph is stored in **Neo4j** and powers multi-hop traversal on top of retrieval: BM25 finds the chunks that lexically match a query, the graph then pulls in related chunks that never shared a single term with it.
+The core idea: entity/relationship extraction from source chunks is done by **Qwen3-0.6B** — a small model, not a frontier one — made trustworthy for this job through **grammar-constrained decoding** via [**Outlines**](https://github.com/dottxt-ai/outlines). The extraction schema (`extraction/schema.py`) is a Pydantic model handed directly to Outlines, which compiles it into a finite state machine and masks the model's logits at every generated token so only schema-conforming output is ever sampled — a mathematical guarantee, not a "the model was told to behave" guarantee. Malformed or duplicate-entity output (`"Acme Corp"` vs `"Acme Corporation"`) becomes structurally impossible rather than something to catch after the fact — which is what makes a 0.6B model viable for structured extraction at all. The resulting graph is stored in **Neo4j** and powers multi-hop traversal on top of retrieval: BM25 finds the chunks that lexically match a query, the graph then pulls in related chunks that never shared a single term with it.
 
 A corpus is chunked into focused, offset-tracked spans, indexed with BM25 over an identifier-aware tokenizer, and searchable from a CLI — no embeddings, no vector index, no LLM in the loop yet.
 
@@ -93,4 +94,7 @@ Holds the corpus, under `data/raw/<corpus-name>/`. Gitignored — nothing under 
 - [bm25s documentation](https://github.com/xhluca/bm25s) — the BM25 library used here.
 - [Python `ast` module docs](https://docs.python.org/3/library/ast.html) — used for structure-aware Python chunking.
 - [uv docs](https://docs.astral.sh/uv/) — dependency/project management.
+- [How to Build Type-Safe, Schema-Constrained, and Function-Driven LLM Pipelines Using Outlines and Pydantic](https://www.marktechpost.com/2026/03/14/how-to-build-type-safe-schema-constrained-and-function-driven-llm-pipelines-using-outlines-and-pydantic/) — Outlines + Pydantic structured generation.
+- [Structured Output (JSON) — LoRAX Docs](https://loraexchange.ai/guides/structured_output/) — constrained JSON generation background.
+- [Outlines — structured JSON/regex/Pydantic LLM generation](https://hermes-agent.nousresearch.com/docs/user-guide/skills/optional/mlops/mlops-inference-outlines) — how Outlines' FSM-based constraining works.
 
