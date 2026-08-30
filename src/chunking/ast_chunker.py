@@ -9,7 +9,8 @@ PY_DEFS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 def chunk_python(
     text: str,
     file_path: str,
-    max_chunk_size: int = 2000
+    max_chunk_size: int = 2000,
+    source_type: str = "code",
 ) -> list[Chunk]:
     """
         chunk python script, each top level func/class is a chunk
@@ -21,6 +22,8 @@ def chunk_python(
             text
             file_path
             max_chunk_size
+            source_type: forwarded to the syntax-error fallback too, so a
+                .py file that fails to parse still comes out as "code".
 
         return:
             chunks
@@ -28,7 +31,7 @@ def chunk_python(
     try:
         tree = ast.parse(text)
     except (SyntaxError, ValueError):
-        return chunk_lines(text, file_path, max_chunk_size)
+        return chunk_lines(text, file_path, max_chunk_size, source_type)
     line_starts = _line_starts(text)
     spans = _split_body(
         tree.body,
@@ -38,11 +41,14 @@ def chunk_python(
         line_starts,
         max_chunk_size
     )
-    return _to_chunks(text, file_path, spans)
+    return _to_chunks(text, file_path, spans, source_type)
 
 
 def chunk_lines(
-    text: str, file_path: str, max_chunk_size: int = 2000
+    text: str,
+    file_path: str,
+    max_chunk_size: int = 2000,
+    source_type: str = "text",
 ) -> list[Chunk]:
     """
         chunk text into windows at line boundaries
@@ -52,13 +58,14 @@ def chunk_lines(
             text
             file_path
             max_chunk_size
+            source_type
 
         return:
             chunks
     """
 
     spans = _split_span(text, 0, len(text), max_chunk_size)
-    return _to_chunks(text, file_path, spans)
+    return _to_chunks(text, file_path, spans, source_type)
 
 
 def _split_body(

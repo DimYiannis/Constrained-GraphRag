@@ -10,6 +10,7 @@ class Chunk:
     first: int
     last: int
     text: str
+    source_type: str
 
 
 def _split_span(
@@ -50,7 +51,7 @@ def _split_span(
 
 
 def _to_chunks(
-    text: str, file_path: str, spans: list[tuple[int, int]]
+    text: str, file_path: str, spans: list[tuple[int, int]], source_type: str
 ) -> list[Chunk]:
     """
         materialize spans as chunks, dropping whitespace-only ones.
@@ -59,6 +60,8 @@ def _to_chunks(
             text
             file_path
             spans: (first, last) pairs.
+            source_type: "code" or "text" - which extraction prompt this
+                chunk should route to.
 
         returns:
             chunks whose text contains at least one non-space character.
@@ -67,6 +70,6 @@ def _to_chunks(
     for first, last in spans:
         piece = text[first:last]
         if piece.strip():
-            chunks.append((Chunk(file_path, first, last, piece)))
+            chunks.append(Chunk(file_path, first, last, piece, source_type))
     return chunks
 

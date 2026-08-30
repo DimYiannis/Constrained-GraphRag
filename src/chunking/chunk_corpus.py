@@ -13,6 +13,14 @@ TEXT_EXTE = {
     ".js", ".html", ".css",
 }
 
+# extensions routed to the "code" extraction prompt (source_type). Everything
+# else in TEXT_EXTE - docs, config/data files - routes to "text": config
+# files aren't prose, but they're not code with function calls either, and
+# "text" degrades more gracefully than "code" would for them.
+CODE_EXTE = {
+    ".py", ".c", ".cc", ".cpp", ".h", ".hpp", ".cu", ".cuh", ".js",
+}
+
 
 def read_text(path:Path) -> str | None:
     """
@@ -47,9 +55,10 @@ def chunk(
         based on the files type
     """
     suffix = Path(file_path).suffix.lower()
+    source_type = "code" if suffix in CODE_EXTE else "text"
     if suffix == ".py":
-        return chunk_python(text,file_path, max_chunk_size)
+        return chunk_python(text, file_path, max_chunk_size, source_type)
     if suffix in {".md", ".rst", ".txt"}:
-        return chunk_markdown(text, file_path, max_chunk_size)
-    return chunk_lines(text, file_path, max_chunk_size)
+        return chunk_markdown(text, file_path, max_chunk_size, source_type)
+    return chunk_lines(text, file_path, max_chunk_size, source_type)
     

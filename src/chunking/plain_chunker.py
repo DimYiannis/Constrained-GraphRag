@@ -7,7 +7,8 @@ MIN_SECTION_SIZE = 600
 def chunk_markdown(
     text: str,
     file_path: str,
-    max_chunk_size: int = 2000
+    max_chunk_size: int = 2000,
+    source_type: str = "text",
 ) -> list[Chunk]:
     """
         chunk markdown like text,
@@ -55,4 +56,4 @@ def chunk_markdown(
     spans: list[tuple[int, int]] = []
     for start, end in merged:
         spans.extend(_split_span(text, start, end, max_chunk_size))
-    return _to_chunks(text, file_path, spans)
+    return _to_chunks(text, file_path, spans, source_type)
