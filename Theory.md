@@ -160,8 +160,14 @@ Loaded into Neo4j: `TokenizerGroup` becomes a `Class` node, `encode` a
 - What does "validated end-to-end" mean concretely for the lexical+graph
   milestone before dense retrieval is allowed to start? Some kind of
   evaluation script needs to exist first (`evaluation/` is empty).
-- Constrained decoding implementation: Outlines vs XGrammar vs something else
-  — CLAUDE.md says "e.g." for both, not committed to one.
+- ~~Constrained decoding implementation: Outlines vs XGrammar vs something
+  else~~ — **settled: Outlines.** Verified against the actual installed
+  package (`1.3.3`), not docs (one docs page turned out stale —
+  `outlines.generate` doesn't exist in this version). Confirmed API:
+  `outlines.from_transformers(hf_model, hf_tokenizer)` to wrap a HF model,
+  `outlines.Generator(model, output_type=ExtractionResult)` built once and
+  reused per-chunk (avoids re-compiling the FSM on every one of ~28k calls).
+  `transformers`/`torch` still need adding as deps before this runs for real.
 - **Entity resolution / name normalization in `loader.py`** — genuinely
   unsolved, not just unbuilt. `loader.py`'s planned exact-name matching does
   nothing for `"Acme Corp"` vs `"Acme Corporation"` (see the correction in

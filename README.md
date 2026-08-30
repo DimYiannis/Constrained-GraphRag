@@ -33,6 +33,67 @@ uv run python -m src search "enable lora" --k 5
 3. data/raw/vllm-0.10.1/vllm/transformers_utils/tokenizer_group.py [691:1287] score=4.74
 ```
 
+---
+
+## 🏗 Architecture
+
+**Offline — building the graph** (`pipeline/index_pipeline.py`):
+
+```mermaid
+flowchart LR
+    corpus[("vLLM corpus<br/>~2,800 files")]
+
+    subgraph chunking["Chunking"]
+        direction TB
+        ast["AST chunker<br/>(.py)"]
+        plain["Plain chunker<br/>(md / text / fallback)"]
+    end
+
+    bm25["BM25 Index<br/>(tokenizer + bm25s)"]
+    qwen["Qwen3-0.6B + Outlines<br/>(constrained extraction)"]
+    neodb[("Neo4j<br/>Chunk nodes +<br/>entities + relationships")]
+
+    corpus --> ast
+    corpus --> plain
+    ast --> bm25
+    plain --> bm25
+    ast --> qwen
+    plain --> qwen
+    qwen --> neodb
+
+    classDef done fill:#d4f4dd,stroke:#2f9e44,color:#1a1a1a;
+    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
+
+    class corpus,chunking,ast,plain,bm25 done;
+    class qwen,neodb planned;
+```
+
+**Online — answering a query** (`pipeline/query_pipeline.py`):
+
+```mermaid
+flowchart TB
+    user(["User"])
+    app["Query Pipeline"]
+    store[("BM25 Index<br/>+ Neo4j Graph")]
+    llm["LLM"]
+
+    user -- "Question" --> app
+    app -- "Complete Response" --> user
+
+    app -- "BM25 search +<br/>graph expansion" --> store
+    store -- "Chunks +<br/>related entities" --> app
+
+    app -- "Prompt<br/>(Question + Context)" --> llm
+    llm -- "Complete Response" --> app
+
+    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
+    class app,store,llm planned;
+```
+
+🟢 built and tested · ⬜ dashed = designed, not yet built (extraction, graph, query pipeline)
+
+---
+
 ## 🔗 Built On
 
 Two earlier projects each contributed one core technique reused here, adapted rather than copied wholesale:
