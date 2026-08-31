@@ -41,3 +41,20 @@ def build_generator(model):
     generator = outlines.Generator(model, output_type=ExtractionResult)
     return generator 
 
+def extract(
+    generator, chunk: Chunk, max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS
+) -> ExtractResult:
+    """
+        extract nodes/edges from one chunk
+
+        args:
+            generator: constrained generator for entities/relationships
+            chunk: routed to the code/text prompt by chunk.source_type
+            max_new_tokens
+
+        return:
+            validated ExtractionResult -> nodes, edges
+    """
+    prompt = build_prompt(chunk)
+    raw = generator(prompt, max_new_tokens=max_new_tokens)
+    return ExtractionResult.model_validate_json(raw)
