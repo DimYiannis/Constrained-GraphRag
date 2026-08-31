@@ -1,0 +1,32 @@
+"""
+    runs Qwen3-0.6B, constrained by Outlines, over a chunk to 
+    extract entities/nodes-relationships/edges
+
+    No logic for invalid schema, we do not need to validate after generation
+    because Outlines' FSM makes invalid schema output impossible to sample
+    so there is nothing to reject and retry against
+"""
+
+import outlines
+from transformers import AutoModelCasualLM, AutoTokenizer
+
+from src.chunking.spans import Chunks
+from src.extraction.prompts import build_prompt
+from src.extraction.schema import ExtractionResult
+
+DEFAULT_MODEL_NAME = "Qwen/Qwen3-0.6B"
+DEFAULT_MAX_NEW_TOKENS = 512
+
+def load_model(model: str = DEFAULT_MODEL_NAME):
+    """
+        wrap a Hugging face causal LM in an Outlines model
+    """
+    # example wrap a Transformers model + tokenizer
+    """
+    model = outlines.from_transformers(
+    AutoModelForCausalLM.from_pretrained(MODEL_NAME, device_map="auto"),
+    AutoTokenizer.from_pretrained(MODEL_NAME),
+    """
+    hf_model = AutoModelForCausalLM.from_pretrained(model_name)
+    hf_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return Outlines.from_transformers(hf_model, hf_tokenizer)

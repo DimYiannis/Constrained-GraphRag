@@ -170,6 +170,8 @@ Two things worth being precise about scope-wise:
 ## 📎 Resources
 
 - [graphrag.com](https://graphrag.com/) — general GraphRAG background.
+- [The GraphRAG Manifesto — Neo4j](https://neo4j.com/blog/genai/graphrag-manifesto/) — why graph-augmented retrieval beats naive RAG.
+- [Knowledge Graphs for RAG — DeepLearning.AI](https://www.deeplearning.ai/courses/knowledge-graphs-rag) — course on building/querying knowledge graphs for RAG.
 - Robertson & Zaramba, *The Probabilistic Relevance Framework: BM25 and Beyond* — BM25 scoring, `k1`/`b`.
 - [bm25s documentation](https://github.com/xhluca/bm25s) — the BM25 library used here.
 - [Python `ast` module docs](https://docs.python.org/3/library/ast.html) — used for structure-aware Python chunking.
@@ -177,4 +179,5 @@ Two things worth being precise about scope-wise:
 - [How to Build Type-Safe, Schema-Constrained, and Function-Driven LLM Pipelines Using Outlines and Pydantic](https://www.marktechpost.com/2026/03/14/how-to-build-type-safe-schema-constrained-and-function-driven-llm-pipelines-using-outlines-and-pydantic/) — Outlines + Pydantic structured generation.
 - [Structured Output (JSON) — LoRAX Docs](https://loraexchange.ai/guides/structured_output/) — constrained JSON generation background.
 - [Outlines — structured JSON/regex/Pydantic LLM generation](https://hermes-agent.nousresearch.com/docs/user-guide/skills/optional/mlops/mlops-inference-outlines) — how Outlines' FSM-based constraining works.
-
+- [Loading models from HF](https://huggingface.co/docs/transformers/en/models?utm_source=chatgpt.com)
+- [Tokenizer and Auto classes from HF](https://huggingface.co/docs/transformers/model_doc/auto?utm_source=chatgpt.com)
