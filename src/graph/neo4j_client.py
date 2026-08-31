@@ -32,3 +32,31 @@ def get_driver(
     # verify connection
     driver.verify_connectivity()
     return driver
+
+def run_query(
+    driver: Driver,
+    query: str,
+    parameters: dict | None = None,
+    database: str | None = None,
+):
+    """
+        Run a Cypher query with the method Driver.execute_query()
+    
+        args:
+            driver: driver instance
+            query: cypher query string
+            parameters: query params
+            database: target db name
+        
+        return:
+            EagerResult (records, summary, keys) -> The object
+            Neo4j's Python driver gives after executing a query:
+            EagerResult
+            ├── records
+            ├── summary
+            └── keys
+    """
+    summary = driver.execute_query(
+        query,
+        parameters or {},
+        database_=database)
