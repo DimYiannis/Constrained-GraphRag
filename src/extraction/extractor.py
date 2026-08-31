@@ -30,3 +30,14 @@ def load_model(model: str = DEFAULT_MODEL_NAME):
     hf_model = AutoModelForCausalLM.from_pretrained(model_name)
     hf_tokenizer = AutoTokenizer.from_pretrained(model_name)
     return Outlines.from_transformers(hf_model, hf_tokenizer)
+
+def build_generator(model):
+    """
+        build a reusable constrained generator for ExtractionResults
+        
+        build once, called per chunk, avoids recompiling the FSM
+        constraint for every one of all the chunks.
+    """
+    generator = outlines.Generator(model, output_type=ExtractionResult)
+    return generator 
+
