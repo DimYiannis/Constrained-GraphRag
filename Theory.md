@@ -110,6 +110,13 @@ chunk(s) it was mentioned in via `MENTIONED_IN`. This edge is the bridge
 between "graph of concepts" and "actual retrievable text" — without it, the
 graph would be a web of entities with no way to get back to source spans.
 
+### What Neo4j actually is
+It's a **graph database and query engine** — general-purpose storage
+plus Cypher as the query language to read and write it, the same role
+Postgres plays for relational data. It has zero built-in notion of
+"traversal" as a specific feature; a 1-2 hop expansion is just a Cypher query
+we write and send it, same as any other read. 
+
 ### Query-time flow (retrieve → expand → answer)
 1. BM25 returns top-k chunks for the query (**built, working today**).
 2. Walk `MENTIONED_IN` *backward* from those chunks → seed entities mentioned
