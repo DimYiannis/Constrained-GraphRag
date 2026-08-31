@@ -64,8 +64,8 @@ flowchart LR
     classDef done fill:#d4f4dd,stroke:#2f9e44,color:#1a1a1a;
     classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
 
-    class corpus,chunking,ast,plain,bm25 done;
-    class qwen,neodb planned;
+    class corpus,chunking,ast,plain,bm25,qwen done;
+    class neodb planned;
 ```
 
 **Online — answering a query** (`pipeline/query_pipeline.py`):
