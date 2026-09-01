@@ -17,7 +17,13 @@
 
 Constrained GraphRAG combines lexical-first retrieval (BM25) with **schema-constrained knowledge graph extraction** over the **vLLM 0.10.1** codebase (~2,800 files, docs + Python source).
 
-The core idea, as a flow: each chunk is run through **Qwen3-0.6B**, constrained by [**Outlines**](https://github.com/dottxt-ai/outlines) so its output always matches a fixed schema — the LLM decides which entities relate and how, Outlines just guarantees that decision comes out structurally valid → those extracted entities and relationships are loaded into **Neo4j** as a graph, connecting chunks through the entities they share → at query time, BM25 finds the chunks that lexically match, then the graph is traversed outward from them to pull in related chunks that never shared a single term with the original match. Mechanics of *how* the constraining actually works are in [Extraction](#-extraction--constrained-decoding) below.
+The core idea, as a flow: each chunk is run through **Qwen3-0.6B**, constrained by [**Outlines**](https://github.com/dottxt-ai/outlines) so its output always matches a fixed schema.
+1. The LLM decides which entities relate and how, Outlines just guarantees that decision comes out structurally valid.
+2. Extracted entities and relationships are loaded into **Neo4j** as a graph, connecting chunks through the entities they share.
+3. BM25 search at query time, BM25 finds the chunks that lexically match.
+4. Graph traversal: the graph is traversed outward from them to pull in related chunks that never shared a single term with the original match.
+
+Mechanics of *how* the constraining actually works are in [Extraction](#-extraction--constrained-decoding) below.
 
 **Why this over a naive lexical-only RAG** (the shape of a prior BM25-only project): plain lexical retrieval has no concept of "entity" at all, only term frequency — a chunk mentioning `"Acme Corp"` and a chunk mentioning `"Acme Corporation"` share almost no tokens, and no amount of BM25 tuning can ever connect them, because the retriever has nothing to connect *with*. GraphRAG's answer is entity resolution: once both surface forms are merged into one canonical graph node at load time, *every* chunk mentioning either form becomes reachable from *every other* chunk mentioning either form, through that shared node.
 
