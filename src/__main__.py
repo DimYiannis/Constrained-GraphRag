@@ -2,6 +2,9 @@ import sys
 from pathlib import Path
 
 import fire
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class RagCLI:
     

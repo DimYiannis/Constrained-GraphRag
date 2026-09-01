@@ -8,9 +8,9 @@
 """
 
 import outlines
-from transformers import AutoModelCasualLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.chunking.spans import Chunks
+from src.chunking.spans import Chunk
 from src.extraction.prompts import build_prompt
 from src.extraction.schema import ExtractionResult
 
@@ -27,9 +27,9 @@ def load_model(model: str = DEFAULT_MODEL_NAME):
     AutoModelForCausalLM.from_pretrained(MODEL_NAME, device_map="auto"),
     AutoTokenizer.from_pretrained(MODEL_NAME),
     """
-    hf_model = AutoModelForCausalLM.from_pretrained(model_name)
-    hf_tokenizer = AutoTokenizer.from_pretrained(model_name)
-    return Outlines.from_transformers(hf_model, hf_tokenizer)
+    hf_model = AutoModelForCausalLM.from_pretrained(model)
+    hf_tokenizer = AutoTokenizer.from_pretrained(model)
+    return outlines.from_transformers(hf_model, hf_tokenizer)
 
 def build_generator(model):
     """
@@ -43,7 +43,7 @@ def build_generator(model):
 
 def extract(
     generator, chunk: Chunk, max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS
-) -> ExtractResult:
+) -> ExtractionResult:
     """
         extract nodes/edges from one chunk
 

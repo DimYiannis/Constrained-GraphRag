@@ -56,7 +56,7 @@ def run_query(
             ├── summary
             └── keys
     """
-    summary = driver.execute_query(
+    return driver.execute_query(
         query,
         parameters or {},
         database_=database)
