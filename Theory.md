@@ -176,10 +176,23 @@ Loaded into Neo4j: `TokenizerGroup` becomes a `Class` node, `encode` a
   reused per-chunk (avoids re-compiling the FSM on every one of ~28k calls).
   `transformers`/`torch` still need adding as deps before this runs for real.
 - **Entity resolution / name normalization in `loader.py`** — genuinely
-  unsolved, not just unbuilt. `loader.py`'s planned exact-name matching does
-  nothing for `"Acme Corp"` vs `"Acme Corporation"` (see the correction in
-  §2, "Schema-constrained extraction"). Options to weigh when we get there:
-  cheap normalization (lowercase/strip punctuation) as a `MERGE` key, fuzzy
-  string matching (edit distance) at load time, or asking the model itself
-  to canonicalize names during extraction. Each has a different cost/recall
-  tradeoff and none is decided.
+  unsolved, still. `loader.py` is now built and its exact-name `MERGE`
+  matching works (verified live), but that still does nothing for
+  `"Acme Corp"` vs `"Acme Corporation"` (see the correction in §2,
+  "Schema-constrained extraction"). Options to weigh: cheap normalization
+  (lowercase/strip punctuation) as the `MERGE` key, fuzzy string matching
+  (edit distance) at load time, or asking the model itself to canonicalize
+  names during extraction. Each has a different cost/recall tradeoff and
+  none is decided.
+- **Extraction quality: the model sometimes names entities after the
+  schema's own type labels** (`"Function"`, `"Class"`, `"Module"`,
+  `"Concept"` as literal entity *names*, matching `node_type` — structurally
+  valid per `schema.py`, semantically empty). Observed twice in a row on the
+  same import-heavy chunk (`vllm/transformers_utils/tokenizer_group.py`,
+  first chunk) during live loader testing — not a one-off fluke. Outlines
+  guarantees valid *shape*; this is exactly the kind of thing it does *not*
+  guarantee (see "Grammar-constrained decoding — the actual mechanism").
+  Needs investigation before running at corpus scale: likely a prompt-
+  wording fix (a concrete worked example in `code_prompt.py`?), possibly
+  worse specifically for import-only chunks with little real structure to
+  extract from.
