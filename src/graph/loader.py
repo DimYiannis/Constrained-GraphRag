@@ -19,10 +19,12 @@ def load_chunk(
           against everything already in the graph every 
           single time it runs
     """
+    # Chunk node —  run driver to add Chunk node 
+    # using the chunk's own file_path/first/last
     run_query(
         driver,
-        "MERGE (c:Chunk {file_path: $file_path, first: $first, last: $last}) "
-        "SET c.source_type = $source_type",
+        "MERGE (chunk:Chunk {file_path: $file_path, first: $first, last: $last}) "
+        "SET chunk.source_type = $source_type",
         {
             "file_path": chunk.file_path,
             "first": chunk.first,
@@ -32,8 +34,10 @@ def load_chunk(
         database=database,
     )
 
-    entity_types = {e.name: e.node_type.value for e in result.entities}
-
+    entity_types = {entity.name: entity.node_type.value for entity in result.entities}
+    
+    # add each entity node in the graph and the MENTIONED_IN 
+    # edge to the chunk, in the same query.
     for entity in result.entities:
         run_query(
             driver,
@@ -49,16 +53,17 @@ def load_chunk(
             },
             database=database
         )
-    
-    for rel in result.relationships:
-        subject_type = entity_types.get(rel.subject, FALLBACK_NODE_TYPE)
-        target_type = entity_types.get(rel.target, FALLBACK_NODE_TYPE)
+    # node-type lookup to make sure both entity nodes exist
+    # connect those two nodes with the right relation type (schema)
+    for relationship in result.relationships:
+        subject_type = entity_types.get(relationship.subject, FALLBACK_NODE_TYPE)
+        target_type = entity_types.get(relationship.target, FALLBACK_NODE_TYPE)
         run_query(
             driver,
             f"MERGE (subject:{subject_type} {{name: $subject}}) "
             f"MERGE (target:{target_type} {{name: $target}}) "
-            f"MERGE (subject)-[:{rel.relation.value}]->(target)",
-            {"subject": rel.subject, "target": rel.target},
+            f"MERGE (subject)-[:{relationship.relation.value}]->(target)",
+            {"subject": relationship.subject, "target": relationship.target},
             database=database,
         )
 
