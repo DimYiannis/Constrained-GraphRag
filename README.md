@@ -70,8 +70,7 @@ flowchart LR
     classDef done fill:#d4f4dd,stroke:#2f9e44,color:#1a1a1a;
     classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
 
-    class corpus,chunking,ast,plain,bm25,qwen done;
-    class neodb planned;
+    class corpus,chunking,ast,plain,bm25,qwen,neodb done;
 ```
 
 **Online — answering a query** (`pipeline/query_pipeline.py`):
@@ -100,6 +99,16 @@ flowchart TB
 
 ---
 
+## 🔄 Workflow
+
+ The two diagrams above show data flowing between modules, this is the actual division of labor behind that flow, offline and online pieces both:
+
+**The corpus is chunked (`chunking/`) → each chunk runs through `extractor.py`, where the LM creates entity-relationships *within* that one chunk → `loader.py`'s `MERGE` incidentally connects *across* chunks by reusing shared entity names → *(at query time)* BM25 (`retrieval/lexical/`) finds lexically-matching seed chunks → `traversal.py`'s `MATCH` *reads* the already-existing connections, expanding outward from those seeds to pull in chunks BM25 never lexically matched.**
+
+
+
+---
+
 ## 🔗 Built On
 
 Two earlier projects each contributed one core technique reused here, adapted rather than copied wholesale:
@@ -114,49 +123,176 @@ Two earlier projects each contributed one core technique reused here, adapted ra
 ```
 constrained-graphrag/
 ├── src/
-│   ├── __main__.py             # Fire CLI — index, search
+│   ├── __main__.py               # Fire CLI — index, search
 │   ├── chunking/
-│   │   ├── chunk_corpus.py     # corpus walking, file dispatch by extension
-│   │   ├── ast_chunker.py      # AST-based chunking for .py (function/class-level)
-│   │   ├── plain_chunker.py    # header-based chunking for markdown, line fallback
-│   │   └── spans.py            # shared span-splitting + Chunk dataclass
-│   └── retrieval/
-│       └── lexical/
-│           ├── tokenizer.py    # identifier-aware tokenizer (subtokens, stopwords)
-│           └── indexer.py      # Index build/save/load, top-k search (bm25s-backed)
-├── data/                        # gitignored, populated locally, never committed
+│   │   ├── chunk_corpus.py       # corpus walking, file dispatch by extension
+│   │   ├── ast_chunker.py        # AST-based chunking for .py (function/class-level)
+│   │   ├── plain_chunker.py      # header-based chunking for markdown, line fallback
+│   │   └── spans.py              # shared span-splitting + Chunk dataclass
+│   ├── retrieval/
+│   │   └── lexical/
+│   │       ├── tokenizer.py      # identifier-aware tokenizer (subtokens, stopwords)
+│   │       └── indexer.py        # Index build/save/load, top-k search (bm25s-backed)
+│   ├── extraction/
+│   │   ├── schema.py             # node/relationship types, the Outlines grammar source
+│   │   ├── extractor.py          # runs Qwen3-0.6B + Outlines, one chunk in, triples out
+│   │   └── prompts/
+│   │       ├── code_prompt.py    # extraction prompt for code chunks
+│   │       └── text_prompt.py    # extraction prompt for text/config chunks
+│   ├── graph/
+│   │   ├── neo4j_client.py       # connection handling
+│   │   ├── loader.py             # writes one chunk's triples into Neo4j
+│   │   └── traversal.py          # graph expansion outward from BM25's results
+│   ├── pipeline/                 # empty — not built yet
+│   │   ├── index_pipeline.py
+│   │   └── query_pipeline.py
+│   └── cache/                    # empty — not built yet
+│       └── cache.py
+├── data/                          # gitignored, populated locally, never committed
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
 ```
 
-Click a folder to see what's inside it:
+Click a folder, then click a file inside it, to see what it does:
 
 <details>
 <summary>📁 <strong>src/</strong></summary>
 
-The CLI entry point (`__main__.py`, Fire-based) plus every module the pipeline is built from so far — chunking and lexical retrieval.
+<details>
+<summary>📄 <code>__main__.py</code></summary>
+
+The CLI entry point. Fire turns each method on `RagCLI` into a command — `index` chunks a corpus and builds the BM25 index, `search` queries it and prints ranked results.
+
+</details>
 
 </details>
 
 <details>
 <summary>📁 <strong>src/chunking/</strong></summary>
 
-Structure-aware chunkers with exact character offsets: AST-based splitting for Python (function/class-level), header-based sectioning for markdown, and a line-window fallback for everything else. Every produced span passes through a shared cap-enforcing splitter so no chunk exceeds `max_chunk_size`.
+<details>
+<summary>📄 <code>chunk_corpus.py</code></summary>
+
+Walks a corpus directory, decides each file's chunking strategy and `source_type` ("code" vs "text") by extension, dispatches to the right chunker below.
+
+</details>
+
+<details>
+<summary>📄 <code>ast_chunker.py</code></summary>
+
+Chunks Python files by parsing the AST; each top-level function/class becomes its own chunk, decorators included. Falls back to line-window chunking if a file fails to parse.
+
+</details>
+
+<details>
+<summary>📄 <code>plain_chunker.py</code></summary>
+
+Chunks markdown by ATX headers (each `#`…`######` starts a new section), everything else by a fixed line-window fallback.
+
+</details>
+
+<details>
+<summary>📄 <code>spans.py</code></summary>
+
+The `Chunk` dataclass, and the shared span-splitting logic (cuts at a blank line, then any newline, then mid-line) every chunker funnels through to enforce `max_chunk_size`.
+
+</details>
 
 </details>
 
 <details>
 <summary>📁 <strong>src/retrieval/lexical/</strong></summary>
 
-BM25 retrieval: an identifier-aware tokenizer (splits `enable_lora` into whole and subtoken forms), and the index build/persist/search logic backed by `bm25s`.
+<details>
+<summary>📄 <code>tokenizer.py</code></summary>
+
+Turns text into BM25 search terms: lowercases, and splits identifiers into both whole and subtoken forms (`enable_lora` → `enable_lora`, `enable`, `lora`) so a query can match either way.
+
+</details>
+
+<details>
+<summary>📄 <code>indexer.py</code></summary>
+
+Builds/saves/loads the BM25 index (backed by `bm25s`), and `search()` — turns a query into ranked, tie-broken chunk results.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>src/extraction/</strong></summary>
+
+<details>
+<summary>📄 <code>schema.py</code></summary>
+
+The fixed vocabulary of node/relationship types, and the Pydantic model (`ExtractionResult`) handed directly to Outlines — this file *is* the grammar the model's output gets constrained against, not just documentation of it.
+
+</details>
+
+<details>
+<summary>📄 <code>extractor.py</code></summary>
+
+Loads Qwen3-0.6B through Outlines, builds a reusable constrained generator, runs it on one chunk at a time: text in, a validated `ExtractionResult` (entities + relationships) out. The model never sees more than one chunk at once.
+
+</details>
+
+<details>
+<summary>📄 <code>prompts/code_prompt.py</code> / <code>text_prompt.py</code></summary>
+
+The two extraction prompts, routed by a chunk's `source_type`. Outlines guarantees the model's output is *structurally* valid; these prompts are what steer it toward *semantically* sensible choices within that structure.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>src/graph/</strong></summary>
+
+<details>
+<summary>📄 <code>neo4j_client.py</code></summary>
+
+Connection handling: builds a driver from `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWORD` (env vars, never hardcoded), verifies it can actually reach the database, a thin wrapper for running a Cypher query.
+
+</details>
+
+<details>
+<summary>📄 <code>loader.py</code></summary>
+
+Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity (merged by name+type, which is what lets the same entity mentioned in different chunks become one shared node), the `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges between entities.
+
+</details>
+
+<details>
+<summary>📄 <code>traversal.py</code></summary>
+
+Takes BM25's top-k results as seed chunks, walks 1-2 hops outward through the graph from the entities mentioned in them, returns the *other* chunks reachable that way — chunks BM25 never lexically matched at all.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>src/pipeline/</strong> and <strong>src/cache/</strong></summary>
+
+<details>
+<summary>📄 <code>index_pipeline.py</code>, <code>query_pipeline.py</code>, <code>cache.py</code></summary>
+
+Empty placeholder files, not built yet. `pipeline/` will orchestrate everything above into an actual offline indexing run and a runtime query flow; `cache/` will hold a reused caching layer.
+
+</details>
 
 </details>
 
 <details>
 <summary>📁 <strong>data/</strong></summary>
 
-Holds the corpus, under `data/raw/<corpus-name>/`. Gitignored — nothing under it is committed, and no path is hard-coded anywhere in the project; every input/output location is a CLI argument.
+<details>
+<summary>📄 <code>raw/&lt;corpus-name&gt;/</code></summary>
+
+Holds the corpus. Gitignored — nothing under it is committed, and no path is hard-coded anywhere in the project; every input/output location is a CLI argument.
+
+</details>
 
 </details>
 
