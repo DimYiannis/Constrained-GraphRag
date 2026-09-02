@@ -143,12 +143,12 @@ constrained-graphrag/
 │   │   ├── neo4j_client.py       # connection handling
 │   │   ├── loader.py             # writes one chunk's triples into Neo4j
 │   │   └── traversal.py          # graph expansion outward from BM25's results
-│   ├── pipeline/                 # empty — not built yet
+│   ├── pipeline/           
 │   │   ├── index_pipeline.py
 │   │   └── query_pipeline.py
-│   └── cache/                    # empty — not built yet
+│   └── cache/                   
 │       └── cache.py
-├── data/                          # gitignored, populated locally, never committed
+├── data/                          
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
