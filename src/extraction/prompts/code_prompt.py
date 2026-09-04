@@ -13,7 +13,10 @@ You are extracting a knowledge graph from a chunk of source code.
 
 Identify:
 - entities: functions, classes, modules, or other named things defined or \
-used in this chunk. Give each a name and a node_type - one of: \
+used in this chunk. Give each a name (the actual identifier as it appears \
+in the code, e.g. "LoRARequest", "encode" - never the literal words \
+"Function", "Class", "Module", "Concept", or "Entity", which are only the \
+allowed values for node_type, not names) and a node_type - one of: \
 Function, Class, Module, Concept, Entity.
 - relationships: how those entities relate to each other, as \
 (subject, relation, target) triples. Valid relations:
@@ -24,6 +27,21 @@ Function, Class, Module, Concept, Entity.
   - RELATES_TO: a general association not covered by the above
   - REFERENCES: this chunk names a specific function/class defined \
 elsewhere, without calling it directly
+
+Example. Given this code:
+
+    from vllm.lora.request import LoRARequest
+
+    class LoRAResolver:
+        def resolve(self, request: LoRARequest):
+            return request.validate()
+
+Correct extraction:
+  entities: [{{"name": "LoRARequest", "node_type": "Class"}}, \
+{{"name": "LoRAResolver", "node_type": "Class"}}, \
+{{"name": "resolve", "node_type": "Function"}}, \
+{{"name": "validate", "node_type": "Function"}}]
+  relationships: [{{"subject": "resolve", "relation": "CALLS", "target": "validate"}}]
 
 Only extract entities and relationships actually present in this chunk's \
 text. Do not invent things that aren't there, and do not extract the file \
