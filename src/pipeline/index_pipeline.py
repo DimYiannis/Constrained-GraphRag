@@ -33,3 +33,26 @@ def run(
     generator = extractor.build_generator(model)
 
     processed = 0
+    try:
+        for path in iter_corpus_files(data_dir):
+            if limit is not None and processed >= limit:
+                break
+            text = read_text(path)
+            if text is None:
+                continue
+            rel_path = Path(os.path.relpath(path, data_dir)).as_posix()
+            for piece in chunk(text, rel_path, max_chunk_size):
+                if limit is not None and processed>= limit:
+                    break
+                print("extracting... \n")
+                result = extractor.extract(generator, piece, max_new_tokens=max_new_tokens)
+                print({result})
+                print()
+                print("loading... ")
+                loader.load_chunk(driver, piece, result, database=database)
+                print("loaded in db")
+                processed += 1
+    finally:
+        driver.close()
+
+    return processed
