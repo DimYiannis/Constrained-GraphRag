@@ -8,7 +8,7 @@
 import os
 from pathlib import Path
 
-from src.chunking.chunk_corpus import iter_corpus_filed, read_text, chunk
+from src.chunking.chunk_corpus import iter_corpus_files, read_text, chunk
 from src.extraction import extractor
 from src.graph import loader, neo4j_client
 
