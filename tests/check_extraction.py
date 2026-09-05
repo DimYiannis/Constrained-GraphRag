@@ -3,9 +3,9 @@ from src.chunking.chunk_corpus import read_text, chunk
 from src.extraction import extractor
 
 def check_file(chunk_index=0):
-    file_path =     text = 'data/raw/vllm-0.10.1/vllm/transformers_utils/tokenizer_group.py'
+    file_path = 'data/raw/vllm-0.10.1/vllm/transformers_utils/tokenizer_group.py'
     text = read_text(file_path)
-    chunks = chunk(text,file_path)
+    chunks = chunk(text, file_path)
     target = chunks[chunk_index]
 
     print(f"chunk ({target.source_type}, {target.first}:{target.last}):")
@@ -14,7 +14,7 @@ def check_file(chunk_index=0):
 
     model = extractor.load_model()
     generator = extractor.build_generator(model)
-    result = extractor.extract(generator, chunk, 600)
+    result = extractor.extract(generator, target, 600)
 
     print(result.model_dump_json(indent=2))
 
