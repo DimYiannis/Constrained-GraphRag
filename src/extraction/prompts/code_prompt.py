@@ -43,9 +43,14 @@ Correct extraction:
 {{"name": "validate", "node_type": "Function"}}]
   relationships: [{{"subject": "resolve", "relation": "CALLS", "target": "validate"}}]
 
-Only extract entities and relationships actually present in this chunk's \
-text. Do not invent things that aren't there, and do not extract the file \
-or chunk itself as an entity.
+Only extract entities and relationships actually present in the code chunk \
+below - never reuse names from the example above, that example is not part \
+of this chunk. Do not invent things that aren't there, and do not extract \
+the file or chunk itself as an entity.
+
+subject and target must always be short identifier names (a function, \
+class, or module name) - never a full line of code, an import statement, \
+or a sentence.
 
 File: {file_path}
 

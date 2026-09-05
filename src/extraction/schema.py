@@ -9,7 +9,7 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class NodeType(str, Enum):
@@ -57,14 +57,14 @@ ExtractableRelationType = Literal[
 
 
 class ExtractedEntity(BaseModel):
-    name: str
+    name: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_.]*$")
     node_type: ExtractableNodeType
 
 
 class ExtractedRelationship(BaseModel):
-    subject: str
+    subject: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_.]*$")
     relation: ExtractableRelationType
-    target: str
+    target: str=Field(pattern=r"^[A-Za-z_][A-Za-z0-9_.]*$")
 
 
 class ExtractionResult(BaseModel):
