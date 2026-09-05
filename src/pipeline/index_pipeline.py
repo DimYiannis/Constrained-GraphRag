@@ -46,9 +46,7 @@ def run(
                     break
                 print("extracting... \n")
                 result = extractor.extract(generator, piece, max_new_tokens=max_new_tokens)
-                print({result})
-                print()
-                print("loading... ")
+                print(result.model_dump_json(indent=2))
                 loader.load_chunk(driver, piece, result, database=database)
                 print("loaded in db")
                 processed += 1

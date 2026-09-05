@@ -1,5 +1,5 @@
-#   PYTHONPATH=/Users/yiannis/Developer/graphrag uv run python -c 
-import src.__main__
+#  PYTHONPATH=/Users/yiannis/Developer/graphrag uv run python tests/check_pipeline.py
+import src.__main__  # loads .env
 from pathlib import Path
 from src.pipeline import index_pipeline
 
