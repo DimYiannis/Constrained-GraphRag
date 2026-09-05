@@ -1,3 +1,4 @@
+# uv run pytest tests/test_extraction_quality.py -v -s
 import re
 import pytest
 import src.__main__
@@ -14,8 +15,6 @@ def test_constraint(generator):
   text = read_text('data/raw/vllm-0.10.1/vllm/transformers_utils/tokenizer_group.py')
   chunks = chunk(text, 'vllm/transformers_utils/tokenizer_group.py')
   target = chunks[0]
-
-  result = generator(target, max_new_tokens=600)
 
   result = extractor.extract(generator, target, max_new_tokens=600)
   for rel in result.relationships:
