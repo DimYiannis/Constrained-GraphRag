@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from src.chunking.chunk_corpus import read_text
 from src.extraction import extractor
@@ -56,19 +57,19 @@ def answer_query(
     print("Debug query=", repr(query), "k=", k, "index.doc_coun=", index.doc_count)
     
     ranked = lexical.search(index, query, k)
-    print("Debug ranked=", ranked)
+    print("Debug ranked=", json.dumps(ranked, indent=2))
     
     seed_chunks = [
         (index.chunks[cid][0], index.chunks[cid][1], index.chunks[cid][2])
         for cid, _ in ranked
     ]
-    print("Debug seed_chunks=", seed_chunks)
+    print("Debug seed_chunks=", json.dumps(seed_chunks, indent=2))
 
     expanded = traversal.expand_chunks(driver, seed_chunks, hops=hops)
     expanded_chunks = [(chunk["file_path"], chunk["first"], chunk["last"]) for chunk in expanded]
 
     all_chunks = seed_chunks + expanded_chunks
-    print("Debug all chunks=", all_chunks)
+    print("Debug all chunks=", json.dumps(all_chunks, indent=2))
 
     context = "\n---\n".join(
         _reslice(data_dir, file_path, first, last)
