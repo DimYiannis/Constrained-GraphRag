@@ -97,10 +97,13 @@ def build_index(
         text = read_text(path)
         if text is None:
             continue
-        rel_path = Path(os.path.relpath(path)).as_posix()
+        # relative to data_dir, must match pipeline/index_pipeline.py's
+        # convention so BM25 search results and graph Chunk nodes reference
+        # the same file_path strings for the same logical file.
+        rel_path = Path(os.path.relpath(path, data_dir)).as_posix()
         # path tokens let a chunk match questions that name its file
         # (e.g. lora.py) without quoting any code content.
-        path_tokens = tokenize(rel_path.removeprefix(f"{data_dir}/"))
+        path_tokens = tokenize(rel_path)
         for piece in chunk(text, rel_path, max_chunk_size):
             tokens = tokenize(piece.text) + path_tokens
             if not tokens:
