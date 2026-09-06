@@ -349,6 +349,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 - [Microsoft GraphRAG — Indexing Dataflow](https://microsoft.github.io/graphrag/index/default_dataflow/) — the open-ended entity/relationship extraction approach this project's closed taxonomy deliberately departs from.
 - [The GraphRAG Manifesto — Neo4j](https://neo4j.com/blog/genai/graphrag-manifesto/) — why graph-augmented retrieval beats naive RAG.
 - [Cypher `MERGE` clause](https://neo4j.com/docs/cypher-manual/current/clauses/merge/) — idempotent node/relationship creation, used throughout `graph/loader.py`.
+- [Hugging Face — Prompting](https://huggingface.co/docs/transformers/main/en/tasks/prompting) — the grounding-prompt pattern `query_pipeline.py`'s `PROMPT_TEMPLATE` follows.
 - [Knowledge Graphs for RAG — DeepLearning.AI](https://www.deeplearning.ai/courses/knowledge-graphs-rag) — course on building/querying knowledge graphs for RAG.
 - Robertson & Zaramba, *The Probabilistic Relevance Framework: BM25 and Beyond* — BM25 scoring, `k1`/`b`.
 - [bm25s documentation](https://github.com/xhluca/bm25s) — the BM25 library used here.

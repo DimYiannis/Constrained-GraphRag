@@ -50,7 +50,41 @@ class RagCLI:
                 f"{rank}. {file_path} "
                 f"[{first}:{last}] score={score:.2f}"
             )
-     
+    
+    def answer(
+        self,
+        query,
+        k: int = 5,
+        data_directory: str = "data/raw",
+        processed_directory: str = "data/processed",
+        hops: int = 2,
+        max_new_tokens: int = 512,
+    ) -> None:
+    """
+        retrieve -> graph expand -> answer a query
+    """
+    from src.extraction import extractor
+    from src.graph import neo4j_client
+    from src.pipeline import query_pipeline
+    from src.retrieval import lexical
+
+    index = lexical.load_index(Path(processed_directory))
+    driver = neo4j_client.get_driver()
+    model = extractor.load_model()
+
+    result = query_pipeline.answer_query(
+        str(query), index, driver, Path(data_directory), model,
+        k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens)
+    )
+
+    print("Sources:")
+    for file_path, first, last, in result["sources"]
+        print(f"  {file_path} [{first}:{last}]")
+    print()
+    print("Answer:")
+    print(result["answer"])
+
+    driver.close()
 
 
 def main() -> None:
