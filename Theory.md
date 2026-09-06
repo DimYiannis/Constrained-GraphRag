@@ -1,10 +1,6 @@
 # Project Notes — Constrained GraphRAG
 
-Living document: concepts and architecture. Add to the concept sections
-whenever something clicks or gets decided differently than planned. This file
-is for understanding and owning the project, not for the portfolio —
-README.md is the polished version. Build status and the decisions log live in
-`progress.md`.
+Living document: concepts and architecture. 
 
 ---
 
@@ -16,10 +12,13 @@ between entities explicitly, so retrieval can hop from a chunk that matched the
 query to a *related* chunk that shares zero words with it. Building that graph
 requires an LLM to read every chunk and extract entities/relationships — but a
 naive LLM extraction step either needs an expensive frontier model to be
-reliable, or produces malformed/inconsistent output. This project's bet:
-**grammar-constrained decoding lets a small model (Qwen3-0.6B) be as reliable
-as a frontier model at structured extraction**, because the schema is enforced
-mechanically at every generated token, not just requested via prompt.
+reliable, or produces malformed/inconsistent output. Grammar-constrained
+decoding closes that gap: forcing the schema at every generated token, not
+just requesting it via prompt, makes a small model's structured output as
+reliable as a frontier model's.
+
+**In this project:** that bet is Qwen3-0.6B + Outlines-based constrained
+decoding, extracting into a fixed graph schema (`schema.py`).
 
 ---
 
@@ -31,94 +30,132 @@ external corpus at query time and put it in the prompt as grounding. Cuts
 hallucination on knowledge the model wasn't reliably trained on.
 
 ### BM25
-Bag-of-words ranking: scores a chunk for a query as
-`Σ idf(t) · tf-saturation(t, chunk)` over shared terms. `k1` controls how fast
-term-frequency saturates (diminishing returns for repeating a term); `b`
-controls how strongly chunk length is normalized against. No notion of meaning
-or relationship — pure term overlap.
+Ranks a chunk against a query by summing `idf(t) · tf-saturation(t, chunk)`
+over every shared term: rare terms count for more (`idf`), and a term
+repeating in a chunk gives diminishing returns rather than a linear reward
+(`tf-saturation`, tuned by `k1`) — `b` controls how much a chunk's length gets
+normalized against, so a long chunk can't win purely by containing more words.
+Pure term overlap — no notion of meaning or relationship.
 
 ### Chunk
-The unit of retrieval: `(file_path, first, last, text)`. Never a whole file.
-Offsets are ground truth — `text[first:last] == chunk.text` always holds, so
-chunk text is never persisted in the index, only the offsets.
+The unit of retrieval: a bounded span of a source document, never a whole
+file, tracked by a location plus an offset range rather than by storing the
+text itself — so the underlying source stays the single source of truth and
+the index can always re-slice it instead of duplicating it.
+
+**In this project:** `(file_path, first, last, text)`. Offsets are ground
+truth — `text[first:last] == chunk.text` always holds, so chunk text is never
+persisted in the index, only the offsets.
 
 ### Identifier-aware tokenizer
-Not a subword/BPE tokenizer. Splits on non-alphanumerics, lowercases, and
-emits identifiers both whole *and* as CamelCase/snake_case subtokens
-(`enable_lora` → `enable_lora`, `enable`, `lora`) — so a query can quote a
-whole identifier or paraphrase it and still match.
+A generic subword/BPE tokenizer splits on statistical frequency, which is
+tuned for natural language, not code — it can obscure the exact identifier a
+query is quoting. An identifier-aware tokenizer instead splits on
+non-alphanumerics and emits an identifier both whole *and* as its
+CamelCase/snake_case subtokens, so a query can quote the whole identifier or
+paraphrase part of it and still match.
+
+**In this project:** `enable_lora` → `enable_lora`, `enable`, `lora`.
 
 ### Why graph expansion, concretely
-BM25 finds chunks mentioning "LoRA" and "loading". A chunk implementing the
-actual mechanism under a totally different name (`apply_adapter_weights`, no
-mention of "LoRA" anywhere) is invisible to BM25 — no shared words. If the
-graph knows `enable_lora CALLS apply_adapter_weights`, retrieval can hop that
-edge and pull the second chunk in anyway.
+Lexical retrieval only finds chunks that share a *surface word* with the
+query. Content that implements the same idea under different vocabulary is
+invisible to it — no shared words, no match. A knowledge graph fixes this by
+storing the connection explicitly as an edge, so retrieval can hop to related
+content it has zero lexical overlap with.
 
-### Schema-constrained extraction
-Before extraction starts, `schema.py` fixes the entire universe: which node
-types exist (`Function`, `Class`, `Module`, `Concept`, `Entity`, `Chunk`) and
-which relationship types exist (`CALLS`, `IMPORTS`, `INHERITS_FROM`,
-`DEFINED_IN`, `MENTIONED_IN`, `RELATES_TO`, `REFERENCES`). Nothing outside
-that list is a legal extraction result — this is enforced mechanically, at
-generation time, because `node_type`/`relation` are enum-constrained fields.
+**In this project:** BM25 finds chunks mentioning "LoRA" and "loading". A
+chunk implementing the actual mechanism under a totally different name
+(`apply_adapter_weights`, no mention of "LoRA" anywhere) is invisible to BM25.
+If the graph knows `enable_lora CALLS apply_adapter_weights`, retrieval can
+hop that edge and pull the second chunk in anyway.
 
-**Correction (this doc previously overstated this):** constrained decoding
-does *not* solve the `"Acme Corp"` vs `"Acme Corporation"` duplicate-entity
-problem. That problem is about the free-text `name` field on
-`ExtractedEntity`, which has no enum constraint — it can't have one, since
-entity names come from actual corpus content and aren't a small fixed
-vocabulary the way node/relation types are. Nothing stops two independent
-extraction calls from naming the same real thing two different ways.
+### Schema-constrained extraction and taxonomies
+A *taxonomy*, here, means a small, fixed vocabulary of node/relationship
+types decided before any extraction runs, rather than discovered from the
+corpus. Fixing that vocabulary up front and enforcing it mechanically (not
+just requesting it via prompt) keeps type-labeling *consistent* across
+independent extraction calls — without it, one chunk's extraction might call
+something a `"Function"` and another chunk's extraction might call the same
+kind of thing a `"Method"`, and that drift compounds across a whole corpus.
 
-**`NodeType`/`RelationType` are the vocabulary, not the linking mechanism.**
-They don't directly "connect chunks" — they're the closed vocabulary that
-makes extraction *consistent* across chunks in one specific dimension: type.
-Without a fixed set, one chunk's extraction might call something a
-`"Function"` and another chunk's extraction might call the same kind of
-thing a `"Method"` — that drift, and only that drift, is what fixing the
-vocabulary up front prevents.
-
-**The actual cross-chunk connection happens later, in the loader — not in
-`schema.py`.** When two different chunks both extract an entity named
-`"TokenizerGroup"` (same exact string), `loader.py` (not yet built) matches
-them by name and merges them into the *same* graph node — that shared node
-is what actually links the two chunks together, via a `MENTIONED_IN` edge
-from each. But "matches them by name" as just described only handles
-*exact* string matches. It does nothing for `"Acme Corp"` vs
-`"Acme Corporation"` — that needs actual entity resolution (normalization,
-fuzzy matching, or similar) inside `loader.py`, which isn't designed yet.
-`schema.py`'s job is narrower than it might look: it only guarantees two
-extractions are *allowed* to agree on an entity's type, so a merge is
-possible in the first place — it says nothing about whether their names will
+A taxonomy is the vocabulary, though, not the linking mechanism — it doesn't
+by itself connect anything. Two different mentions of the same real-world
+entity still need to be recognized as *the same node*, which is a separate
+problem (**entity resolution**): matching by exact name is cheap and handles
+the common case, but does nothing for `"Acme Corp"` vs `"Acme Corporation"` —
+that needs actual normalization or fuzzy matching. A taxonomy only guarantees
+two extractions are *allowed* to agree on an entity's type, so a merge is
+possible in the first place; it says nothing about whether their names will
 actually match.
 
+**In this project:** node types (`Function`, `Class`, `Module`, `Concept`,
+`Entity`, `Chunk`) and relationship types (`CALLS`, `IMPORTS`,
+`INHERITS_FROM`, `DEFINED_IN`, `MENTIONED_IN`, `RELATES_TO`, `REFERENCES`) are
+fixed in `schema.py` and enforced at generation time via enum-constrained
+fields. Cross-chunk linking happens later, in `loader.py`: two chunks that
+both extract an entity named `"TokenizerGroup"` (exact string match) get
+merged into the same graph node via `MERGE`. Fuzzy/normalized entity
+resolution beyond exact-match isn't built yet — a genuinely open problem
+(tracked in `progress.md`).
+
+**Closed taxonomy vs. open labelling, more generally.** The taxonomy approach
+above is one end of a spectrum; the other end is open extraction, the style
+used by, e.g., Microsoft's original GraphRAG, where the model free-labels
+relationships in its own words (`relationship_description`) instead of
+picking from a closed set. Open extraction is more expressive — it can
+describe a relationship a closed taxonomy has no label for — but it pays for
+that with duplication (`"depends on"` / `"relies on"` / `"requires"` all
+meaning the same edge) that needs a later clustering/dedup pass to clean up,
+and it has no way to be validated at generation time: nothing stops the model
+from emitting free text that doesn't correspond to anything at all. A closed
+taxonomy trades away that expressiveness for a small, enumerable universe
+that grammar-constrained decoding can mechanically enforce, token by token —
+which matters specifically when reliability can't come from the model just
+being smart enough. Open extraction and a small model don't mix well for
+that reason: there's nothing fixed to constrain generation against.
+
 ### Grammar-constrained decoding — the actual mechanism
-Instead of asking the model to produce valid JSON and hoping, the schema is
-compiled into a grammar. At every generated token, the decoder computes which
-next tokens would keep the output on a path toward valid schema-conforming
-output, and masks every other token's probability to zero before sampling.
-The model is not being polite about following instructions — a
-schema-violating token is never a candidate to begin with. This is *why* a
-0.6B model is trustworthy here: the reliability gap that would normally
-require a frontier model is closed by making invalid output structurally
-impossible, not by making the model smarter.
+Instead of asking a model to produce valid structured output and hoping, the
+target schema is compiled into a grammar. At every generated token, the
+decoder computes which next tokens would keep the output on a path toward
+valid schema-conforming output, and masks every other token's probability to
+zero before sampling. The model is not being polite about following
+instructions — a schema-violating token is never a candidate to begin with.
+This is why a small model can be trustworthy at structured extraction: the
+reliability gap that would normally require a frontier model is closed by
+making invalid output structurally impossible, not by making the model
+smarter.
 
-### The `Chunk` node and `MENTIONED_IN`
-`Chunk` is always its own graph node. Every extracted entity links back to the
-chunk(s) it was mentioned in via `MENTIONED_IN`. This edge is the bridge
-between "graph of concepts" and "actual retrievable text" — without it, the
-graph would be a web of entities with no way to get back to source spans.
+### Bridging the graph back to source text
+An entity-relationship graph on its own is just a web of concepts with no way
+back to the text it came from. Fixing that requires the source span itself to
+be a node in the graph, with every extracted entity linked back to the
+span(s) it was mentioned in — that link is what turns "a graph of concepts"
+into "a graph that can hand retrieval real, quotable text."
 
-### What Neo4j actually is
-It's a **graph database and query engine** — general-purpose storage
-plus Cypher as the query language to read and write it, the same role
-Postgres plays for relational data. It has zero built-in notion of
-"traversal" as a specific feature; a 1-2 hop expansion is just a Cypher query
-we write and send it, same as any other read. 
+**In this project:** `Chunk` is always its own graph node; every extracted
+entity links to it via `MENTIONED_IN`.
+
+### Graph databases
+A graph database is general-purpose storage plus a query language built
+around traversing relationships directly, rather than joining rows across
+tables — the same conceptual role a relational database plays for tabular
+data. It typically has no separate built-in "traversal" feature; a multi-hop
+expansion is just a query, structurally no different from any other read.
+
+**In this project:** Neo4j + Cypher. A 1-2 hop expansion over
+`CALLS`/`RELATES_TO`/`REFERENCES` is a single Cypher query, sent the same way
+any other read would be.
 
 ### Query-time flow (retrieve → expand → answer)
-1. BM25 returns top-k chunks for the query (**built, working today**).
+The general pattern for retrieval + graph expansion: get a seed set from
+whatever retrieval method is in use, map that seed set into the graph,
+traverse outward a bounded number of hops, map the newly-reached graph nodes
+back to retrievable text, then merge everything into the final context.
+
+**In this project, concretely:**
+1. BM25 returns top-k chunks for the query.
 2. Walk `MENTIONED_IN` *backward* from those chunks → seed entities mentioned
    in them.
 3. Traverse 1-2 hops outward from seeds over `CALLS`/`RELATES_TO`/`REFERENCES`
@@ -156,43 +193,3 @@ Loaded into Neo4j: `TokenizerGroup` becomes a `Class` node, `encode` a
 | `graph/traversal.py` | Cypher for query-time steps 2-4 above | `neo4j_client.py`, loaded graph |
 | `pipeline/index_pipeline.py` | Orchestrates offline: corpus → chunk → extract → load graph | all of the above + `chunking/`, `retrieval/lexical/` |
 | `pipeline/query_pipeline.py` | Orchestrates runtime: query → retrieve → graph expand → prompt → answer | `retrieval/lexical/`, `graph/traversal.py` |
-
----
-
-## 4. Open questions / things to decide when we get there
-
-- How does `extractor.py` get chunks — re-chunk from `data_dir` itself
-  (mirrors how `lexical.build_index()` works today), or take a pre-chunked
-  list produced once by `index_pipeline.py` and shared with `lexical.py`?
-- What does "validated end-to-end" mean concretely for the lexical+graph
-  milestone before dense retrieval is allowed to start? Some kind of
-  evaluation script needs to exist first (`evaluation/` is empty).
-- ~~Constrained decoding implementation: Outlines vs XGrammar vs something
-  else~~ — **settled: Outlines.** Verified against the actual installed
-  package (`1.3.3`), not docs (one docs page turned out stale —
-  `outlines.generate` doesn't exist in this version). Confirmed API:
-  `outlines.from_transformers(hf_model, hf_tokenizer)` to wrap a HF model,
-  `outlines.Generator(model, output_type=ExtractionResult)` built once and
-  reused per-chunk (avoids re-compiling the FSM on every one of ~28k calls).
-  `transformers`/`torch` still need adding as deps before this runs for real.
-- **Entity resolution / name normalization in `loader.py`** — genuinely
-  unsolved, still. `loader.py` is now built and its exact-name `MERGE`
-  matching works (verified live), but that still does nothing for
-  `"Acme Corp"` vs `"Acme Corporation"` (see the correction in §2,
-  "Schema-constrained extraction"). Options to weigh: cheap normalization
-  (lowercase/strip punctuation) as the `MERGE` key, fuzzy string matching
-  (edit distance) at load time, or asking the model itself to canonicalize
-  names during extraction. Each has a different cost/recall tradeoff and
-  none is decided.
-- **Extraction quality: the model sometimes names entities after the
-  schema's own type labels** (`"Function"`, `"Class"`, `"Module"`,
-  `"Concept"` as literal entity *names*, matching `node_type` — structurally
-  valid per `schema.py`, semantically empty). Observed twice in a row on the
-  same import-heavy chunk (`vllm/transformers_utils/tokenizer_group.py`,
-  first chunk) during live loader testing — not a one-off fluke. Outlines
-  guarantees valid *shape*; this is exactly the kind of thing it does *not*
-  guarantee (see "Grammar-constrained decoding — the actual mechanism").
-  Needs investigation before running at corpus scale: likely a prompt-
-  wording fix (a concrete worked example in `code_prompt.py`?), possibly
-  worse specifically for import-only chunks with little real structure to
-  extract from.
