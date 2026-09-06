@@ -179,6 +179,47 @@ Loaded into Neo4j: `TokenizerGroup` becomes a `Class` node, `encode` a
 `Function` node, edges between them, and `TokenizerGroup` gets a
 `MENTIONED_IN` edge to the chunk it came from.
 
+### Caching
+Memoizing expensive, repeatable work — a model call, an index lookup — keyed
+by its input, so a repeat (or near-duplicate) request skips redoing it.
+Worth it exactly when the same expensive computation recurs often enough
+that the storage cost pays for itself in time saved; not worth it for
+work that's already cheap or never repeats.
+
+**In this project:** planned for repeat/near-duplicate extraction calls
+and/or repeat queries. `cache/cache.py` is currently a placeholder — not
+yet designed.
+
+### Batching
+Running inputs through a model one at a time usually leaves the underlying
+hardware (GPU/CPU vector units) underused — most of the fixed cost of a
+forward pass gets paid whether it processes one sequence or several at once.
+Batching groups multiple inputs into a single call so that cost is amortized
+across all of them, at the cost of some complexity (padding variable-length
+inputs to a common length so they can share one call).
+
+**In this project:** extraction currently runs one chunk per `generate()`
+call, fully sequential.
+
+### Semantic (dense) retrieval
+Instead of matching on shared surface words, embed both the query and each
+chunk into a shared vector space and rank by similarity. This captures
+*meaning* rather than literal term overlap — it can find a chunk that means
+the same thing as the query even if it shares none of the same words. The
+tradeoff runs the other way from BM25: dense retrieval is weaker on exact
+identifiers and rare terms, since embeddings blur precise tokens together
+in a way pure term-matching doesn't.
+
+
+### Hybrid fusion (RRF)
+Combining rankings from two different retrieval methods (e.g. lexical +
+dense) into one list is awkward if you try to do it by combining their raw
+scores directly — a BM25 score and a cosine similarity aren't on comparable
+scales. Reciprocal Rank Fusion sidesteps this by scoring each document using
+only its *rank* in each list (`1/(k + rank)`, summed across lists) — a
+document that ranks well in either method gets boosted, without either
+method dominating just because its numbers happen to be bigger.
+
 ---
 
 ## 3. Architecture — where each piece fits
