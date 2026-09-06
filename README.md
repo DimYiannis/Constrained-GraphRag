@@ -9,6 +9,8 @@
 
 **Finding the right ~2000 characters out of 28,246 chunks of the vLLM codebase via BM25.**
 
+📖 [**RUNNING.md**](./RUNNING.md) — full setup + command reference · 🐳 [**docker-setup.md**](./docker-setup.md) — Neo4j via Docker
+
 </div>
 
 ---
