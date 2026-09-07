@@ -69,10 +69,6 @@ flowchart LR
     plain --> qwen
     qwen --> neodb
 
-    classDef done fill:#d4f4dd,stroke:#2f9e44,color:#1a1a1a;
-    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
-
-    class corpus,chunking,ast,plain,bm25,qwen,neodb done;
 ```
 
 **Online — answering a query** (`pipeline/query_pipeline.py`):
@@ -93,12 +89,8 @@ flowchart TB
     app -- "Prompt<br/>(Question + Context)" --> llm
     llm -- "Complete Response" --> app
 
-    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
-    class app,store,llm planned;
+
 ```
-
-🟢 built and tested · ⬜ dashed = designed, not yet built (extraction, graph, query pipeline)
-
 ---
 
 ## 🔄 Workflow
@@ -306,7 +298,7 @@ The extraction schema (`extraction/schema.py`) is a Pydantic model (`ExtractionR
 
 Two things worth being precise about scope-wise:
 
-- This constrains *structure and type* (`node_type`/`relation` are enum-restricted fields, `name`/`subject`/`target` are regex-restricted to an identifier shape) — it does **not** constrain *which* real-world thing a name refers to. Two chunks extracting the same real entity under different names (`"Acme Corp"` vs `"Acme Corporation"`) is a separate problem, solved (once built) by entity resolution in `graph/loader.py` at load time, not by constrained decoding.
+- This constrains *structure and type* (`node_type`/`relation` are enum-restricted fields, `name`/`subject`/`target` are regex-restricted to an identifier shape) — it does **not** constrain *which* real-world thing a name refers to. Two chunks extracting the same real entity under different names (`"Acme Corp"` vs `"Acme Corporation"`) is a separate, unsolved problem — see [Entity Resolution](#-entity-resolution) below.
 - `CHUNK` and `MENTIONED_IN` are deliberately excluded from what the model is even allowed to emit (see `ExtractableNodeType`/`ExtractableRelationType` in `schema.py`) — `Chunk` nodes already exist before extraction runs, and `MENTIONED_IN` is structural (an entity extracted *from* a chunk is trivially mentioned in it), added automatically rather than spending the model's constrained generation budget on it.
 
 ---
@@ -331,6 +323,15 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 *What I'd do differently:* design the enum with an explicit versioning/extension process from the start, rather than treating it as fixed. A closed schema solves label proliferation, but a genuinely new relationship type the initial design didn't anticipate has nowhere to go except a catch-all like `RELATES_TO` — which just relocates the fuzziness instead of removing it. 
 - Better: periodically review catch-all usage as a signal for when the enum itself needs a deliberate, reviewed addition — schema evolution as a governed process, not a binary choice between fully open and fully frozen.
+
+---
+
+## 🪪 Entity Resolution
+
+**The closed taxonomy above solves *type* consistency. It says nothing about *identity*.** `NodeType`/`RelationType` only guarantee that two independent extractions are *allowed* to agree a thing is a `Function` or a `Class` — they don't guarantee two mentions of the same real-world thing end up as the same graph node.
+
+**Our problem, concretely:** `graph/loader.py` currently merges entities by exact string match — `MERGE` on `(label, name)`. Two chunks both extracting an entity named `"TokenizerGroup"` correctly collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it. That's the mechanism that makes cross-chunk graph connections happen at all. But exact match does nothing for `"Acme Corp"` vs `"Acme Corporation"` — two mentions of the same real entity, spelled differently, silently become two separate nodes. No error, no warning — just quietly fragmented graph structure, each half missing edges the other has.
+
 
 ---
 
