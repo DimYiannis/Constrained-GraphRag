@@ -1,0 +1,2788 @@
+[
+  {
+    "question_id": "17526382-7764-4120-b5e8-2d3726b8a4da",
+    "split": "docs",
+    "question": "What HTTP endpoint is used to dynamically load a LoRA adapter in vLLM?",
+    "answer": "The `/v1/load_lora_adapter` endpoint is used to dynamically load a LoRA adapter in vLLM. You send a POST request to this endpoint with the adapter's name and path in the JSON payload.",
+    "sources": [
+      {
+        "file_path": "docs/features/lora.md",
+        "first_character_index": 4695,
+        "last_character_index": 6098
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cc83c230-099f-4c11-aeab-8c09715c5942",
+    "split": "docs",
+    "question": "What command can be used to evaluate the accuracy of a quantized model using lm_eval with vLLM?",
+    "answer": "You can use `lm_eval --model vllm --model_args pretrained=\"./path-to-quantized-model\",add_bos_token=true --tasks gsm8k --num_fewshot 5 --limit 250 --batch_size 'auto'` to evaluate quantized models in vLLM, making sure to include the `add_bos_token=True` argument as quantized models can be sensitive to the presence of the BOS token.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/int8.md",
+        "first_character_index": 2439,
+        "last_character_index": 4084
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5ea5c01a-c953-4477-ae3a-978e20bd73b8",
+    "split": "docs",
+    "question": "What method does vLLM's LLM class provide for generating embedding vectors from prompts?",
+    "answer": "The `LLM.embed` method, which outputs an embedding vector for each prompt and is primarily designed for embedding models in vLLM's pooling models functionality.",
+    "sources": [
+      {
+        "file_path": "docs/models/pooling_models.md",
+        "first_character_index": 3619,
+        "last_character_index": 4765
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "7c43f334-9999-42b3-935f-11320dc75270",
+    "split": "docs",
+    "question": "What hardware platforms does vLLM support?",
+    "answer": "vLLM supports NVIDIA GPUs (full support), AMD GPUs, Intel GPUs, TPUs, and CPUs (x86_64/aarch64 with full support, MacOS with limited support). Additional hardware platforms are available through plugins like vllm-ascend, vllm-spyre, vllm-gaudi, and vllm-openvino.",
+    "sources": [
+      {
+        "file_path": "docs/usage/v1_guide.md",
+        "first_character_index": 3311,
+        "last_character_index": 4170
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "81e37f26-1203-40ad-a848-764d187d083f",
+    "split": "docs",
+    "question": "What are the differences between mm_kwargs and tok_kwargs when using the _call_hf_processor method in vLLM multimodal processing?",
+    "answer": "In vLLM's multimodal processing, mm_kwargs is used to both initialize and call the HuggingFace processor, while tok_kwargs is only used to call the HuggingFace processor. This distinction allows for different parameter handling during processor initialization versus execution phases.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/multimodal.md",
+        "first_character_index": 24856,
+        "last_character_index": 25721
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "716dd176-b2d7-4613-825a-4ac84b01aab7",
+    "split": "docs",
+    "question": "Where can I find information about using generative models in vLLM?",
+    "answer": "Information about using generative models in vLLM can be found on the generative models page, as referenced in the supported models documentation.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 12252,
+        "last_character_index": 12366
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "29a0969f-e8f1-44ee-ada8-3824a1f62360",
+    "split": "docs",
+    "question": "How is the number of placeholder feature tokens for an image calculated in vLLM's multimodal implementation?",
+    "answer": "The number of placeholder feature tokens for an image is calculated as `(image_size // patch_size) ** 2 + 1`, where the formula represents the number of patches plus one additional token for the class embedding. This calculation is implemented in the `get_num_image_tokens` method within vLLM's multimodal model contribution guidelines.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/multimodal.md",
+        "first_character_index": 9837,
+        "last_character_index": 11737
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5fcddb53-d6d0-4ef2-a4bf-b69790561af2",
+    "split": "docs",
+    "question": "What parallelism strategy does vLLM support for large-scale deployment of Mixture of Experts models?",
+    "answer": "vLLM supports large-scale deployment combining Data Parallel attention with Expert or Tensor Parallel MoE layers for distributed serving of Mixture of Experts models.",
+    "sources": [
+      {
+        "file_path": "docs/serving/parallelism_scaling.md",
+        "first_character_index": 2554,
+        "last_character_index": 2949
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "07f706fd-0dcc-4a56-a5ac-cd94ad1c8185",
+    "split": "docs",
+    "question": "How do you achieve reproducible results in vLLM?",
+    "answer": "To achieve reproducible results in vLLM, you need to turn off multiprocessing for V1 by setting `VLLM_ENABLE_V1_MULTIPROCESSING=0` or set the global seed for V0. Note that vLLM does not guarantee reproducibility by default for performance reasons, and reproducibility only works on the same hardware and vLLM version.",
+    "sources": [
+      {
+        "file_path": "docs/usage/reproducibility.md",
+        "first_character_index": 0,
+        "last_character_index": 849
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2afc1d73-f2a8-410f-ac60-e7721be5094b",
+    "split": "docs",
+    "question": "Where can I find vLLM setup and installation instructions for Google TPU?",
+    "answer": "The setup and installation instructions for Google TPU can be found in the getting_started/installation/google_tpu.md documentation section.",
+    "sources": [
+      {
+        "file_path": "docs/configuration/tpu.md",
+        "first_character_index": 114,
+        "last_character_index": 243
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b336583e-9dcd-44cc-aa87-a2337f0f2d7d",
+    "split": "docs",
+    "question": "What parameter does vLLM set according to different quantization schemes to support weight quantization in linear layers?",
+    "answer": "vLLM sets the `linear_method` parameter according to different quantization schemes to support weight quantization in linear layers.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/basic.md",
+        "first_character_index": 5934,
+        "last_character_index": 6110
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "452261bc-6ce4-469e-a9b2-fcddbe26b944",
+    "split": "docs",
+    "question": "What is the main configuration object that is passed around in vLLM's class hierarchy?",
+    "answer": "The VllmConfig class is the main configuration object that is passed around in vLLM's class hierarchy, containing all necessary information for the various classes in the architecture.",
+    "sources": [
+      {
+        "file_path": "docs/design/arch_overview.md",
+        "first_character_index": 4810,
+        "last_character_index": 6139
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "48c25d8b-d2f1-4c65-ace8-fcf586a38afb",
+    "split": "docs",
+    "question": "How do you build and run a vLLM Docker image for s390x CPU architecture?",
+    "answer": "Build the Docker image using `docker build -f docker/Dockerfile.s390x --tag vllm-cpu-env .`, then run it with `docker run --rm --privileged true --shm-size 4g -p 8000:8000 -e VLLM_CPU_KVCACHE_SPACE=<KV cache space> -e VLLM_CPU_OMP_THREADS_BIND=<CPU cores for inference> vllm-cpu-env --model meta-llama/Llama-3.2-1B-Instruct --dtype float` for s390x CPU systems.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/cpu/s390x.inc.md",
+        "first_character_index": 2452,
+        "last_character_index": 3126
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4d0f06a5-e010-4b6a-bc27-35d2c75eb39f",
+    "split": "docs",
+    "question": "What interface should a multimodal model class inherit from in vLLM?",
+    "answer": "A multimodal model class in vLLM should inherit from the `SupportsMultiModal` interface, which is imported from `vllm.model_executor.models.interfaces`. This is required when implementing multimodal models that can handle both text and image inputs.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/multimodal.md",
+        "first_character_index": 5126,
+        "last_character_index": 5539
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d7e28c25-761b-48a0-ade1-a5e459999fe2",
+    "split": "docs",
+    "question": "What is stored in the logits array during the qk_max calculation in vLLM's paged attention implementation?",
+    "answer": "In vLLM's paged attention implementation, the logits array initially stores the qk (query-key) dot product results before they are normalized to softmax values. The logits array is allocated in shared memory with a size equal to the number of context tokens, and each thread group sets values for its assigned context tokens.",
+    "sources": [
+      {
+        "file_path": "docs/design/paged_attention.md",
+        "first_character_index": 13161,
+        "last_character_index": 14568
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "65078294-e236-4983-b9be-068e8816d9df",
+    "split": "docs",
+    "question": "How do you use GPTQModel quantized models with vLLM's Python API?",
+    "answer": "GPTQModel quantized models can be used directly through vLLM's LLM entrypoint by specifying the model name when creating the LLM instance, such as `llm = LLM(model=\"ModelCloud/DeepSeek-R1-Distill-Qwen-7B-gptqmodel-4bit-vortex-v2\")`, then using the standard generate() method with sampling parameters.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/gptqmodel.md",
+        "first_character_index": 2975,
+        "last_character_index": 4032
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a3ee1a66-4718-4f65-a9d9-ca12cc4c876d",
+    "split": "docs",
+    "question": "How can you manually set the attention backend in vLLM?",
+    "answer": "You can manually set the attention backend in vLLM by configuring the environment variable `VLLM_ATTENTION_BACKEND` to one of these options: `FLASH_ATTN`, `FLASHINFER`, or `XFORMERS`.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/quickstart.md",
+        "first_character_index": 10780,
+        "last_character_index": 11525
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "54131f31-356c-476c-a227-ecab17e95978",
+    "split": "docs",
+    "question": "What is the fastest matrix multiplication kernel in vLLM's torch compile autotuning for an 8x2048 by 2048x3072 matrix multiplication?",
+    "answer": "triton_mm_4 is the fastest kernel with 0.0130 ms execution time and 100.0% accuracy in vLLM's torch compile autotuning benchmarks.",
+    "sources": [
+      {
+        "file_path": "docs/design/torch_compile.md",
+        "first_character_index": 10307,
+        "last_character_index": 12199
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "598c5d47-56a5-4cc6-8c01-fab2b02c221d",
+    "split": "docs",
+    "question": "How do you pass audio inputs to vLLM for multimodal inference?",
+    "answer": "You pass a tuple `(array, sampling_rate)` to the `'audio'` field of the multi-modal dictionary in vLLM.",
+    "sources": [
+      {
+        "file_path": "docs/features/multimodal_inputs.md",
+        "first_character_index": 8690,
+        "last_character_index": 8877
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f17a76af-6ca5-4fee-b80f-8f969e6c2585",
+    "split": "docs",
+    "question": "What are the key capabilities of Ray Serve LLM for vLLM deployment?",
+    "answer": "Ray Serve LLM provides three key capabilities for vLLM deployment: it exposes both OpenAI-compatible HTTP API and Pythonic API, scales from single GPU to multi-node cluster without code changes, and offers observability and autoscaling policies through Ray dashboards and metrics.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 27171,
+        "last_character_index": 27920
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a4aa0cc8-ab95-4c66-af21-77bb9774e4b7",
+    "split": "docs",
+    "question": "How can you view Nsight Systems profiles in vLLM?",
+    "answer": "You can view Nsight Systems profiles either as summaries in the CLI using `nsys stats [profile-file]` or in the GUI by installing Nsight locally following the directions from NVIDIA's get-started guide.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/profiling.md",
+        "first_character_index": 4932,
+        "last_character_index": 5306
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "90939e22-7490-40f0-9cad-3cd8173a6c95",
+    "split": "docs",
+    "question": "What quantization parameter should be specified when loading a Quark quantized model in vLLM?",
+    "answer": "When loading a Quark quantized model in vLLM, you should specify `quantization='quark'` as a parameter in the LLM constructor.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/quark.md",
+        "first_character_index": 6638,
+        "last_character_index": 8031
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "74de08d1-3bf7-43de-a74c-1eac844bc063",
+    "split": "docs",
+    "question": "How do you enable GPUDirect RDMA in vLLM using Docker?",
+    "answer": "To enable GPUDirect RDMA in vLLM using Docker, run the container with `--ipc=host`, `--shm-size=16G`, and mount `/dev/shm` using `-v /dev/shm:/dev/shm`. This configuration provides the necessary shared memory and IPC settings for GPUDirect RDMA functionality in vLLM's parallelism scaling.",
+    "sources": [
+      {
+        "file_path": "docs/serving/parallelism_scaling.md",
+        "first_character_index": 8767,
+        "last_character_index": 10579
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d1501d52-b446-4c93-b66e-bea705efbe94",
+    "split": "docs",
+    "question": "What git commit should I checkout when installing Triton flash attention for ROCm with vLLM?",
+    "answer": "You should checkout commit e5be006 when installing Triton flash attention for ROCm with vLLM.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/gpu/rocm.inc.md",
+        "first_character_index": 786,
+        "last_character_index": 2783
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "251e3c3f-d368-4e71-85dd-c20013fedebd",
+    "split": "docs",
+    "question": "What is the purpose of vLLM's plugin system?",
+    "answer": "vLLM's plugin system allows users to extend vLLM with custom features without modifying the vLLM codebase, addressing frequent community requests for extensibility.",
+    "sources": [
+      {
+        "file_path": "docs/design/plugin_system.md",
+        "first_character_index": 0,
+        "last_character_index": 947
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d56e34ca-85e9-4199-b4b7-24f6440318f5",
+    "split": "docs",
+    "question": "How can you check if a model is natively supported in vLLM?",
+    "answer": "You can check the `config.json` file inside the Hugging Face repository - if the `\"architectures\"` field contains a model architecture listed in vLLM's supported models documentation, then it should be natively supported.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 6684,
+        "last_character_index": 8464
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4bf223ec-d359-4252-8930-a65db8afcfd1",
+    "split": "docs",
+    "question": "What backends does vLLM support for generating structured outputs?",
+    "answer": "vLLM supports xgrammar and guidance as backends for generating structured outputs.",
+    "sources": [
+      {
+        "file_path": "docs/features/structured_outputs.md",
+        "first_character_index": 0,
+        "last_character_index": 309
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "44c05b2c-beec-474d-ad77-8321c26a29a9",
+    "split": "docs",
+    "question": "What minimum CUDA compiler version is required for building cutlass_scaled_mm kernels for Blackwell SM100 in vLLM?",
+    "answer": "CUDA compiler version 12.8 or later is required for building cutlass_scaled_mm kernels for Blackwell SM100 (c3x/CUTLASS 3.x) in vLLM's CMake build configuration.",
+    "sources": [
+      {
+        "file_path": "CMakeLists.txt",
+        "first_character_index": 17949,
+        "last_character_index": 19384
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8b40c55a-1e2e-4865-834b-167932a5097f",
+    "split": "docs",
+    "question": "What Python environment manager is recommended for vLLM installation?",
+    "answer": "uv is the recommended Python environment manager for vLLM installation, as it is described as a very fast Python environment manager for creating and managing Python environments.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/python_env_setup.inc.md",
+        "first_character_index": 0,
+        "last_character_index": 412
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "22777170-ee96-4628-89f2-2c0e94fd7f20",
+    "split": "docs",
+    "question": "What runner parameter is required when serving the DSE-Qwen2-MRL model in vLLM?",
+    "answer": "The `--runner pooling` parameter is required when serving the DSE-Qwen2-MRL model in vLLM's OpenAI-compatible server.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 11812,
+        "last_character_index": 12626
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "87790ff0-09f3-4aa6-8f8e-83180ded4c40",
+    "split": "docs",
+    "question": "What is the minimum version of bitsandbytes required for vLLM quantization?",
+    "answer": "The minimum version of bitsandbytes required for vLLM quantization is 0.46.1, which can be installed using `pip install bitsandbytes>=0.46.1`.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/bnb.md",
+        "first_character_index": 0,
+        "last_character_index": 1744
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "31c0d1fa-b91b-4b9e-b616-19476a4485b0",
+    "split": "docs",
+    "question": "How can you make a vLLM model compatible with both old and new versions of vLLM?",
+    "answer": "You can create two model classes - one that inherits from the old model and uses individual config parameters, and another that uses VllmConfig. Then use version checking with packaging.version to conditionally assign the appropriate class based on whether the vLLM version is 0.6.4 or higher.",
+    "sources": [
+      {
+        "file_path": "docs/design/arch_overview.md",
+        "first_character_index": 7948,
+        "last_character_index": 8684
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2d8e04da-8f89-4654-bc2d-118a3aa3512e",
+    "split": "docs",
+    "question": "What is the primary motivation behind the Modular Kernel framework in vLLM's FusedMoE implementation?",
+    "answer": "The Modular Kernel framework addresses the intractable number of ways FusedMoE operations can be combined by grouping operations into logical components, making combinations manageable, preventing code duplication, and decoupling All2All Dispatch & Combine implementations from FusedMoE implementations for independent development.",
+    "sources": [
+      {
+        "file_path": "docs/design/fused_moe_modular_kernel.md",
+        "first_character_index": 1786,
+        "last_character_index": 2707
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8e131a8f-7466-42a7-bd76-a1bb5f32f988",
+    "split": "docs",
+    "question": "How many inner iterations does a warp need to handle a whole block of value tokens in vLLM's paged attention when BLOCK_SIZE is 16, V_VEC_SIZE is 8, HEAD_SIZE is 128, and WARP_SIZE is 32?",
+    "answer": "A warp needs 8 inner iterations to handle a whole block of value tokens in vLLM's paged attention implementation, calculated as 128 * 16 / 256 where 256 equals WARP_SIZE * V_VEC_SIZE.",
+    "sources": [
+      {
+        "file_path": "docs/design/paged_attention.md",
+        "first_character_index": 17270,
+        "last_character_index": 18521
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2fca0ee8-4ffa-4d5a-a15d-cce139f08f38",
+    "split": "docs",
+    "question": "What endpoint does vLLM use to expose production metrics?",
+    "answer": "vLLM exposes production metrics via the `/metrics` endpoint on the vLLM OpenAI compatible API server.",
+    "sources": [
+      {
+        "file_path": "docs/usage/metrics.md",
+        "first_character_index": 0,
+        "last_character_index": 1840
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2a165588-2d3d-4d50-9516-0efa08fd7900",
+    "split": "docs",
+    "question": "How do you build and install vLLM from source for AWS Neuron?",
+    "answer": "To build vLLM from source for AWS Neuron, clone the vLLM repository, install the Neuron requirements, and build with the NEURON target device: `git clone https://github.com/vllm-project/vllm.git && cd vllm && pip install -U -r requirements/neuron.txt && VLLM_TARGET_DEVICE=\"neuron\" pip install -e .`",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/aws_neuron.md",
+        "first_character_index": 2222,
+        "last_character_index": 3908
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3aff1593-e6cf-45ab-8cba-8858d3f98b06",
+    "split": "docs",
+    "question": "What are the two main reasons for using disaggregated prefilling in vLLM?",
+    "answer": "The two main reasons for using disaggregated prefilling in vLLM are: 1) tuning time-to-first-token (TTFT) and inter-token-latency (ITL) separately by putting prefill and decode phases in different vLLM instances with different parallel strategies, and 2) controlling tail ITL by preventing prefill jobs from being inserted during decoding, which reduces tail latency more reliably than chunked prefill approaches.",
+    "sources": [
+      {
+        "file_path": "docs/features/disagg_prefill.md",
+        "first_character_index": 0,
+        "last_character_index": 1114
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b8006621-c08c-4ada-a80b-586fc3e5b4e9",
+    "split": "docs",
+    "question": "Where can I find information about debugging distributed vLLM deployments?",
+    "answer": "Information about distributed debugging can be found in the \"Troubleshooting distributed deployments\" section of the vLLM documentation, specifically in the distributed_troubleshooting.md file under the parallelism and scaling documentation.",
+    "sources": [
+      {
+        "file_path": "docs/serving/parallelism_scaling.md",
+        "first_character_index": 11003,
+        "last_character_index": 11170
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5c579258-59df-4bc6-af98-2a13f57d7b70",
+    "split": "docs",
+    "question": "How do you configure default multimodal LoRAs when starting the vLLM server?",
+    "answer": "You can pass a JSON dictionary using the `--default-mm-loras` flag mapping modalities to LoRA model IDs, for example: `--default-mm-loras '{\"audio\":\"ibm-granite/granite-speech-3.3-2b\"}'` when starting the vLLM server with the serve command.",
+    "sources": [
+      {
+        "file_path": "docs/features/lora.md",
+        "first_character_index": 13150,
+        "last_character_index": 14470
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "10f95271-664c-4fc9-b63c-bbb17fe10150",
+    "split": "docs",
+    "question": "What flag do you need to specify when serving a reasoning model in vLLM to extract reasoning content?",
+    "answer": "You need to specify the `--reasoning-parser` flag when serving reasoning models in vLLM. This flag determines which reasoning parser to use for extracting reasoning content from the model output, such as `--reasoning-parser deepseek_r1` for DeepSeek models.",
+    "sources": [
+      {
+        "file_path": "docs/features/reasoning_outputs.md",
+        "first_character_index": 1673,
+        "last_character_index": 3268
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e3f2374c-9598-469e-bdae-a2f0962044e2",
+    "split": "docs",
+    "question": "What are the three key abstractions used for disaggregated prefilling in vLLM?",
+    "answer": "The three key abstractions for disaggregated prefilling in vLLM are: Connector (allows kv consumer to retrieve KV caches from kv producer), LookupBuffer (provides insert and drop_select APIs for KV cache management), and Pipe (a single-direction FIFO pipe for tensor transmission with send_tensor and recv_tensor support).",
+    "sources": [
+      {
+        "file_path": "docs/features/disagg_prefill.md",
+        "first_character_index": 2755,
+        "last_character_index": 4662
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "1b303f73-8827-4c31-9d6e-3b1324c7b6ce",
+    "split": "docs",
+    "question": "Which model architectures support tensor parallelism in vLLM for the Llama family of models?",
+    "answer": "The `LlamaForCausalLM` architecture supports tensor parallelism for Llama models including Llama 3.1, Llama 3, Llama 2, LLaMA, and Yi variants in vLLM's supported models documentation.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 17942,
+        "last_character_index": 19791
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "860c7aac-6520-413c-ac98-19448b34472a",
+    "split": "docs",
+    "question": "What method needs to be overridden in BaseProcessingInfo to specify the maximum number of input items for each modality in vLLM multimodal models?",
+    "answer": "You need to override the abstract method `get_supported_mm_limits` to return the maximum number of input items for each modality supported by the model. This method is part of the BaseProcessingInfo subclass used when contributing multimodal models to vLLM.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/multimodal.md",
+        "first_character_index": 5541,
+        "last_character_index": 6196
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2a297df9-dacc-442c-899b-6416078fb451",
+    "split": "docs",
+    "question": "What are the system requirements for running vLLM with Intel Gaudi devices?",
+    "answer": "For running vLLM with Intel Gaudi devices, you need Ubuntu 22.04 LTS, Python 3.10, an Intel Gaudi accelerator, and Intel Gaudi software version 1.18.0. Note that there are no pre-built wheels or images available, so vLLM must be built from source for Intel Gaudi deployment.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/intel_gaudi.md",
+        "first_character_index": 0,
+        "last_character_index": 715
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "67d28a0f-661d-4707-8982-0fa4162b1081",
+    "split": "docs",
+    "question": "What backend allows many decoder language models to be automatically loaded in vLLM without manual implementation?",
+    "answer": "The Transformers backend allows many decoder language models to be automatically loaded in vLLM without requiring manual implementation in the vLLM codebase.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/README.md",
+        "first_character_index": 0,
+        "last_character_index": 1176
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "43914555-ab14-430a-8092-544eba3a30fd",
+    "split": "docs",
+    "question": "What resources are available for vLLM contributors working on speculative decoding?",
+    "answer": "vLLM provides several resources for contributors working on speculative decoding, including \"A Hacker's Guide to Speculative Decoding in vLLM\" video, documentation on Lookahead Scheduling, information on batch expansion, and details about dynamic speculative decoding (issue #4565).",
+    "sources": [
+      {
+        "file_path": "docs/features/spec_decode.md",
+        "first_character_index": 13289,
+        "last_character_index": 13765
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a8e7dbd2-458e-428b-a969-cc5e22ce999b",
+    "split": "docs",
+    "question": "Which vLLM versions are affected by the zmq bug that can cause hanging?",
+    "answer": "vLLM versions v0.5.2, v0.5.3, and v0.5.3.post1 are affected by a zmq bug that can occasionally cause vLLM to hang depending on the machine configuration. The issue is resolved in later versions.",
+    "sources": [
+      {
+        "file_path": "docs/usage/troubleshooting.md",
+        "first_character_index": 15156,
+        "last_character_index": 16070
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cd5e1f0b-1053-4bc0-b4d8-84e003834785",
+    "split": "docs",
+    "question": "How do you install vLLM with a specific CUDA version using pip?",
+    "answer": "You can install vLLM with a specific CUDA version by setting environment variables and using a direct wheel URL. First, get the latest version with `export VLLM_VERSION=$(curl -s https://api.github.com/repos/vllm-project/vllm/releases/latest | jq -r .tag_name | sed 's/^v//')`, then set your CUDA version (e.g., `export CUDA_VERSION=118` for CUDA 11.8), and finally install using `uv pip install` with the GitHub release wheel URL and PyTorch extra index.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/gpu/cuda.inc.md",
+        "first_character_index": 2266,
+        "last_character_index": 2756
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8447d11b-fb89-4c9c-a8d9-6251ab28c7f6",
+    "split": "docs",
+    "question": "What quantization methods are supported and unsupported for vLLM on Intel Gaudi?",
+    "answer": "For vLLM on Intel Gaudi, INC quantization is supported while AWQ quantization is not supported.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/intel_gaudi.md",
+        "first_character_index": 3772,
+        "last_character_index": 4673
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "7f0cb10b-945c-482b-9ba7-100c39d9c64b",
+    "split": "docs",
+    "question": "How do you uninstall a vLLM deployment using Helm?",
+    "answer": "Run the command `sudo helm uninstall vllm` to remove the vLLM deployment from your production stack.",
+    "sources": [
+      {
+        "file_path": "docs/deployment/integrations/production-stack.md",
+        "first_character_index": 4054,
+        "last_character_index": 5719
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5e2555d2-a1a6-4402-ac72-4e7f46378439",
+    "split": "docs",
+    "question": "What are the three main usage patterns supported by vLLM?",
+    "answer": "vLLM supports three main usage patterns: Inference and Serving (running a single model instance), Deployment (scaling up model instances for production), and Training (training or fine-tuning models).",
+    "sources": [
+      {
+        "file_path": "docs/usage/README.md",
+        "first_character_index": 0,
+        "last_character_index": 434
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f91d4c7f-8bda-4cdf-8613-fc746027dadd",
+    "split": "docs",
+    "question": "How do you serve a model with audio input support in vLLM?",
+    "answer": "Use the `vllm serve` command with an audio-capable model, such as `vllm serve fixie-ai/ultravox-v0_5-llama-3_2-1b`, which launches an OpenAI-compatible server that supports audio inputs according to the OpenAI Audio API.",
+    "sources": [
+      {
+        "file_path": "docs/features/multimodal_inputs.md",
+        "first_character_index": 17286,
+        "last_character_index": 19281
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "070dd694-1d93-473d-8d04-3ac50689b023",
+    "split": "docs",
+    "question": "How do you add support for a new reasoning model in vLLM?",
+    "answer": "You can add a new `ReasoningParser` similar to the DeepSeek R1 reasoning parser by creating a class that inherits from `ReasoningParser` and registering it with the `ReasoningParserManager` using the `@ReasoningParserManager.register_module()` decorator. The class must implement the `extract_reasoning_content_streaming()` and `extract_reasoning_content()` methods for handling streaming and non-streaming responses respectively.",
+    "sources": [
+      {
+        "file_path": "docs/features/reasoning_outputs.md",
+        "first_character_index": 8174,
+        "last_character_index": 10067
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "85e0249b-06ff-4e2a-a0fc-336dc1cbe5f8",
+    "split": "docs",
+    "question": "What shape must multimodal embeddings have when returned from get_multimodal_embeddings in vLLM multimodal models?",
+    "answer": "The returned multimodal embeddings must be either a 3D torch.Tensor of shape (num_items, feature_size, hidden_size), or a list/tuple of 2D torch.Tensors of shape (feature_size, hidden_size), where multimodal_embeddings[i] retrieves the embeddings from the i-th multimodal data item.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/multimodal.md",
+        "first_character_index": 1859,
+        "last_character_index": 3654
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "bfd2db0e-020b-4efc-994a-8692df116cd7",
+    "split": "docs",
+    "question": "What vLLM server endpoints correspond to the offline LLM.generate and LLM.chat APIs?",
+    "answer": "The vLLM OpenAI-Compatible Server provides the Completions API (similar to LLM.generate for text) and Chat API (similar to LLM.chat for text and multi-modal inputs with chat templates).",
+    "sources": [
+      {
+        "file_path": "docs/models/generative_models.md",
+        "first_character_index": 4934,
+        "last_character_index": 5589
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "0593b68b-2f74-440e-9d31-f09f06f09bb1",
+    "split": "docs",
+    "question": "What are the three recommended ways to implement third-party connectors for vLLM disaggregated prefilling?",
+    "answer": "The three recommended implementation approaches for vLLM disaggregated prefilling connectors are: 1) Fully-customized connector - implement your own Connector with third-party libraries for maximum control but potential compatibility risks, 2) Database-like connector - implement your own LookupBuffer supporting SQL-like insert and drop_select APIs, and 3) Distributed P2P connector - implement your own Pipe supporting send_tensor and recv_tensor APIs similar to torch.distributed.",
+    "sources": [
+      {
+        "file_path": "docs/features/disagg_prefill.md",
+        "first_character_index": 4986,
+        "last_character_index": 5892
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5521313f-eae6-431d-9ff4-f3cc31698bfa",
+    "split": "docs",
+    "question": "What should you do if you encounter persistent or strange build errors in vLLM after significant changes or switching branches?",
+    "answer": "Remove the CMake build directory (e.g., `rm -rf cmake-build-release`) and re-run the `cmake --preset` and `cmake --build` commands. This clean build approach helps resolve build issues that may occur during vLLM's incremental build process.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/incremental_build.md",
+        "first_character_index": 7404,
+        "last_character_index": 8351
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "66bcc3cc-043c-4705-9f54-0bd98185e403",
+    "split": "docs",
+    "question": "How do you evaluate accuracy of a quantized model using lm_eval in vLLM?",
+    "answer": "Use the lm_eval command with the vLLM model backend, specifying the quantized model path and including `add_bos_token=true` in the model_args. For example: `lm_eval --model vllm --model_args pretrained=\"./path-to-quantized-model\",add_bos_token=true --tasks gsm8k --num_fewshot 5`. The `add_bos_token=True` argument is particularly important for INT4 quantized models as they can be sensitive to the presence of the BOS token.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/int4.md",
+        "first_character_index": 2459,
+        "last_character_index": 3972
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "359b6c20-fa53-4cc3-871d-2d42e9001c3f",
+    "split": "docs",
+    "question": "How do you report security vulnerabilities in vLLM?",
+    "answer": "Report security vulnerabilities by following the project's security policy detailed in the vLLM Security Policy document at https://github.com/vllm-project/vllm/blob/main/SECURITY.md.",
+    "sources": [
+      {
+        "file_path": "docs/usage/security.md",
+        "first_character_index": 4018,
+        "last_character_index": 4366
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "bfdddb92-dfbf-4ef6-9867-2f0919e75505",
+    "split": "docs",
+    "question": "What requirements must a model meet to be compatible with vLLM?",
+    "answer": "To ensure compatibility with vLLM, your model must meet specific requirements as outlined in the contributing documentation for basic model integration.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/basic.md",
+        "first_character_index": 514,
+        "last_character_index": 640
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b4fb8f6b-b613-46fa-a0aa-aebcf9ed2b14",
+    "split": "docs",
+    "question": "What is the recommended starting number of samples for calibration data in INT4 quantization?",
+    "answer": "512 samples is the recommended starting point for calibration data in INT4 quantization, with the option to increase if accuracy drops.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/int4.md",
+        "first_character_index": 3974,
+        "last_character_index": 5807
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9423895e-b4b2-4844-ba61-c818f2c48f27",
+    "split": "docs",
+    "question": "What tool calling format does vLLM support for Llama 3.1 and 3.2 models?",
+    "answer": "vLLM supports JSON-based tool calling for Llama 3.1 and 3.2 models, using the `llama3_json` tool parser. For Llama 4 models, pythonic tool calling is recommended using the `llama4_pythonic` parser.",
+    "sources": [
+      {
+        "file_path": "docs/features/tool_calling.md",
+        "first_character_index": 8624,
+        "last_character_index": 10533
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2cfb7657-3bdf-4e81-bfe4-f0dfb8f557f6",
+    "split": "docs",
+    "question": "How many calibration samples are recommended when preparing calibration data for INT4 quantization in vLLM?",
+    "answer": "512 calibration samples are recommended for INT4 quantization in vLLM, as specified in the NUM_CALIBRATION_SAMPLES constant used in the quantization process documentation.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/int4.md",
+        "first_character_index": 894,
+        "last_character_index": 2457
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "7ddc938a-4b0c-4e26-86e9-666e0ab68c28",
+    "split": "docs",
+    "question": "What CUDA compiler version is required to build Machete kernels in vLLM?",
+    "answer": "CUDA compiler version 12.0 or later is required to build Machete kernels in vLLM's CMake build system.",
+    "sources": [
+      {
+        "file_path": "CMakeLists.txt",
+        "first_character_index": 31032,
+        "last_character_index": 32876
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "efa50722-19a6-44a2-ab89-e554eb436899",
+    "split": "docs",
+    "question": "What model architectures does vLLM support for GPT-2 models?",
+    "answer": "vLLM supports GPT-2 models through the `GPT2LMHeadModel` architecture, including variants like `gpt2` and `gpt2-xl`, with support for LoRA adapters and quantization as documented in the supported models list.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 16232,
+        "last_character_index": 18112
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "16cc036e-cfe4-46c7-8f1b-58402f6e4fdb",
+    "split": "docs",
+    "question": "How can you disable unused modalities completely in vLLM multimodal models?",
+    "answer": "You can disable unused modalities completely by setting their limit to zero using the `limit_mm_per_prompt` parameter. For example, to disable video input while accepting images, use `limit_mm_per_prompt={\"video\": 0}`, or to disable images for text-only inference, use `limit_mm_per_prompt={\"image\": 0}`.",
+    "sources": [
+      {
+        "file_path": "docs/configuration/conserving_memory.md",
+        "first_character_index": 3571,
+        "last_character_index": 4959
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "0f5d97bf-9666-4550-ac80-1e88084214dc",
+    "split": "docs",
+    "question": "What argument should be included when evaluating FP8 quantized models with lm_eval to ensure proper accuracy assessment?",
+    "answer": "The `add_bos_token=True` argument should be included when evaluating FP8 quantized models with lm_eval, as quantized models can be sensitive to the presence of the BOS token and lm_eval does not add it by default.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/fp8.md",
+        "first_character_index": 3163,
+        "last_character_index": 4344
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3620bb65-9be5-4959-88b6-74552f6e3be2",
+    "split": "docs",
+    "question": "What three requirements must a custom model meet to be compatible with vLLM's Transformers backend?",
+    "answer": "A custom model must have: 1) `kwargs` passed down through all modules from the main model to the attention module, 2) the attention module must use `ALL_ATTENTION_FUNCTIONS` to call attention, and 3) the main model must contain `_supports_attention_backend = True`. These requirements ensure compatibility with vLLM's supported models framework.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 3368,
+        "last_character_index": 5336
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "54e177d5-9249-4653-b6ea-175de7f7411f",
+    "split": "docs",
+    "question": "How does vLLM handle sharding and quantization of model weights during initialization?",
+    "answer": "vLLM performs sharding and quantization during model initialization rather than after initialization. This approach allows each GPU to load only the weights it needs (e.g., 50GB per GPU for a 405B model across 16 GPUs) instead of loading the full model weights to every GPU first, significantly reducing memory overhead. The model constructor includes a `prefix` argument to enable different initialization based on the module prefix, supporting features like non-uniform quantization.",
+    "sources": [
+      {
+        "file_path": "docs/design/arch_overview.md",
+        "first_character_index": 8616,
+        "last_character_index": 10192
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cc3dcf4f-5155-4592-91eb-76ddb4e738b1",
+    "split": "docs",
+    "question": "How do you build a vLLM wheel from source for CUDA GPU installations?",
+    "answer": "To build a vLLM wheel from source for CUDA GPU installations, you need to use the build-wheel-from-source process as documented in the vLLM CUDA installation guide.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/gpu/cuda.inc.md",
+        "first_character_index": 5696,
+        "last_character_index": 5736
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "99f0b809-1905-4f24-82e6-fa7c7866418d",
+    "split": "docs",
+    "question": "What models are currently covered in vLLM's end-to-end performance validation before each release?",
+    "answer": "The current coverage includes Llama3, Llama4, and Mixtral models, tested on NVIDIA H100 and AMD MI300x hardware. Note that coverage may change based on new model releases and hardware availability.",
+    "sources": [
+      {
+        "file_path": "RELEASE.md",
+        "first_character_index": 3440,
+        "last_character_index": 5003
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "30266ac7-6f42-4e3f-9bce-30219ee46f93",
+    "split": "docs",
+    "question": "What is the minimum NVIDIA GPU compute capability required for INT4 computation in vLLM?",
+    "answer": "INT4 computation in vLLM requires NVIDIA GPUs with compute capability greater than 8.0, which includes Ampere, Ada Lovelace, Hopper, and Blackwell architectures.",
+    "sources": [
+      {
+        "file_path": "docs/features/quantization/int4.md",
+        "first_character_index": 0,
+        "last_character_index": 892
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d8a776b1-adb4-428b-8e81-306998a43554",
+    "split": "docs",
+    "question": "What is the minimum vLLM version required for P2P NCCL connector functionality?",
+    "answer": "The minimum vLLM version required for P2P NCCL connector functionality is 0.9.2, which can be installed using `pip install \"vllm>=0.9.2\"`.",
+    "sources": [
+      {
+        "file_path": "docs/design/p2p_nccl_connector.md",
+        "first_character_index": 9005,
+        "last_character_index": 9060
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3f4ce35c-5c00-4b7f-8781-d292056ba4fb",
+    "split": "docs",
+    "question": "Can vLLM serve multiple models on a single port using the OpenAI API?",
+    "answer": "No, vLLM does not currently support serving multiple models on a single port using the OpenAI compatible server. You need to run multiple server instances (each serving a different model) and use another layer to route requests to the correct server.",
+    "sources": [
+      {
+        "file_path": "docs/usage/faq.md",
+        "first_character_index": 0,
+        "last_character_index": 1564
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5a5189ea-56a8-40ea-a338-94322a242135",
+    "split": "docs",
+    "question": "How do you configure data parallel deployment in vLLM?",
+    "answer": "You can configure data parallel deployment in vLLM by adding the `--data-parallel-size` argument to the vllm serve command, such as `--data-parallel-size=4` for 4 GPUs. This can be combined with tensor parallelism using `--tensor-parallel-size` for distributed inference across multiple GPUs.",
+    "sources": [
+      {
+        "file_path": "docs/serving/data_parallel_deployment.md",
+        "first_character_index": 2491,
+        "last_character_index": 3465
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d5df4835-9245-47ba-b9c5-28e690f70c85",
+    "split": "docs",
+    "question": "What CUDA architectures are supported for Marlin MOE kernels in vLLM?",
+    "answer": "Marlin MOE kernels in vLLM support CUDA architectures 8.0, 8.7, and 9.0+PTX, as defined in the CMakeLists.txt build configuration.",
+    "sources": [
+      {
+        "file_path": "CMakeLists.txt",
+        "first_character_index": 32779,
+        "last_character_index": 34672
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "626fea67-be37-41c7-b801-ff643ca89b8c",
+    "split": "docs",
+    "question": "What FusedMoEPrepareAndFinalize implementation is used when there is no expert parallelism in vLLM?",
+    "answer": "MoEPrepareAndFinalizeNoEP is used when there is no expert parallelism (EP), meaning no all2all kernels are invoked in the fused MoE modular kernel system.",
+    "sources": [
+      {
+        "file_path": "docs/design/fused_moe_modular_kernel.md",
+        "first_character_index": 16011,
+        "last_character_index": 16915
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d0853e7c-86df-4b77-85d6-206d49f713a5",
+    "split": "docs",
+    "question": "How should security issues be reported in vLLM?",
+    "answer": "Security issues in vLLM should be reported privately using the vulnerability submission form available on the project's GitHub repository. Reports are then triaged by the vulnerability management team as outlined in the vLLM security policy.",
+    "sources": [
+      {
+        "file_path": "SECURITY.md",
+        "first_character_index": 0,
+        "last_character_index": 736
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9f727ae2-eb97-4224-bc71-676e52769bb9",
+    "split": "docs",
+    "question": "What are the three communication backends available for Expert Parallelism in vLLM?",
+    "answer": "The three communication backends for Expert Parallelism in vLLM are: `pplx` (for single node with chunked prefill support), `deepep_high_throughput` (for multi-node prefill with grouped GEMM), and `deepep_low_latency` (for multi-node decode with CUDA graph support).",
+    "sources": [
+      {
+        "file_path": "docs/serving/expert_parallel_deployment.md",
+        "first_character_index": 0,
+        "last_character_index": 1505
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "de8f43f8-80fa-4a17-9fdf-b00040702df8",
+    "split": "docs",
+    "question": "What do the symbols \u2705, \ud83d\udea7, and \u26a0\ufe0f mean in vLLM's feature status legend?",
+    "answer": "In vLLM's supported models documentation: \u2705 indicates the feature is supported, \ud83d\udea7 indicates the feature is planned but not yet supported, and \u26a0\ufe0f indicates the feature is available but may have known issues or limitations.",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 11792,
+        "last_character_index": 12212
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "50a943ce-91e1-47d4-8d8d-ddb218f7d730",
+    "split": "docs",
+    "question": "What datatypes are supported by vLLM's ARM CPU backend?",
+    "answer": "vLLM's ARM CPU backend supports Float32, FP16, and BFloat16 datatypes for ARM64 CPUs with NEON support.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/cpu/arm.inc.md",
+        "first_character_index": 0,
+        "last_character_index": 1636
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3ea21165-0dc8-460f-9353-35c42abc69f1",
+    "split": "docs",
+    "question": "What are the two ways to format input when making requests to vLLM's classify endpoint?",
+    "answer": "You can pass input to the vLLM classify endpoint either as an array of strings or as a single string directly to the `input` field in the OpenAI-compatible server.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 16632,
+        "last_character_index": 18629
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4f575a44-7098-49ff-81ee-f925c13f956e",
+    "split": "docs",
+    "question": "What is the current limitation when using MLP speculators for speculative decoding in vLLM?",
+    "answer": "MLP speculative models currently need to be run without tensor parallelism, although the main model can still use tensor parallelism. This limitation will be fixed in a future release.",
+    "sources": [
+      {
+        "file_path": "docs/features/spec_decode.md",
+        "first_character_index": 3949,
+        "last_character_index": 5423
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8ef264c6-cab8-4326-920b-262901ad76e8",
+    "split": "docs",
+    "question": "How do you forward the vllm-router-service port to access the vLLM deployment?",
+    "answer": "Use `sudo kubectl port-forward svc/vllm-router-service 30080:80` to forward port 80 of the vllm-router-service to port 30080 on the host machine, enabling access to the OpenAI-compatible API endpoints in the vLLM production stack deployment.",
+    "sources": [
+      {
+        "file_path": "docs/deployment/integrations/production-stack.md",
+        "first_character_index": 2815,
+        "last_character_index": 4142
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "1c8c4c31-340c-413e-a6eb-7010f2c10e8b",
+    "split": "docs",
+    "question": "Which vLLM model architectures support LoRA fine-tuning?",
+    "answer": "In vLLM's supported models documentation, the following architectures support LoRA fine-tuning: AquilaForCausalLM (Aquila models), ArceeForCausalLM (Arcee AFM models), BaiChuanForCausalLM (Baichuan models), BailingMoeForCausalLM (Ling models), BambaForCausalLM (Bamba models), ChatGLMModel/ChatGLMForConditionalGeneration (ChatGLM models), CohereForCausalLM/Cohere2ForCausalLM (Command-R models), and DeciLMForCausalLM (DeciLM models).",
+    "sources": [
+      {
+        "file_path": "docs/models/supported_models.md",
+        "first_character_index": 12654,
+        "last_character_index": 14537
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a8d3991a-90f0-4dfc-a227-b2ef35c1db41",
+    "split": "docs",
+    "question": "Where can I find the configurable parameters for the vLLM Helm chart?",
+    "answer": "The configurable parameters for the vLLM Helm chart are described in a table within the `values.yaml` file.",
+    "sources": [
+      {
+        "file_path": "docs/deployment/frameworks/helm.md",
+        "first_character_index": 1591,
+        "last_character_index": 1686
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3e7873ce-9d83-4d41-876d-6bb8bde7cb34",
+    "split": "docs",
+    "question": "What quantization methods are supported by vLLM CPU?",
+    "answer": "vLLM CPU supports AWQ and GPTQ quantization (x86 only), and compressed-tensor INT8 W8A8 quantization (x86 and s390x architectures).",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/cpu.md",
+        "first_character_index": 9439,
+        "last_character_index": 9926
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "de2f7646-a182-4d9b-8fb0-b9edf7ce47e9",
+    "split": "docs",
+    "question": "What is Reinforcement Learning from Human Feedback (RLHF)?",
+    "answer": "RLHF is a technique that fine-tunes language models using human-generated preference data to align model outputs with desired behaviors. vLLM can be used to generate completions for RLHF through libraries like TRL, OpenRLHF, verl, and unsloth.",
+    "sources": [
+      {
+        "file_path": "docs/training/rlhf.md",
+        "first_character_index": 0,
+        "last_character_index": 1162
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "451afbac-b40a-474f-880e-2bb73bd4ce8c",
+    "split": "docs",
+    "question": "Which models support the process_vision_info function in vLLM?",
+    "answer": "The process_vision_info function is only applicable to Qwen2.5-VL and similar models in vLLM's multimodal input processing.",
+    "sources": [
+      {
+        "file_path": "docs/features/multimodal_inputs.md",
+        "first_character_index": 8526,
+        "last_character_index": 8688
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8e937b74-eb3a-4942-8e21-5a1159a1f175",
+    "split": "docs",
+    "question": "What OpenAI APIs are supported by vLLM's OpenAI-compatible server?",
+    "answer": "vLLM's OpenAI-compatible server supports the Completions API and Chat API (including Chat Completions API with Vision and Audio parameters). Both APIs are compatible with OpenAI's respective APIs and can be accessed using the official OpenAI Python client.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 7569,
+        "last_character_index": 9381
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9dc7f06a-bff9-403c-91d3-10c07b370096",
+    "split": "docs",
+    "question": "Where can I find a complete example of structured outputs in vLLM online serving?",
+    "answer": "A full example of structured outputs for online serving can be found in the vLLM documentation at examples/online_serving/structured_outputs.md.",
+    "sources": [
+      {
+        "file_path": "docs/features/structured_outputs.md",
+        "first_character_index": 5461,
+        "last_character_index": 5535
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d30ed96e-b7a7-4700-8bf5-d1f162ff3f5c",
+    "split": "docs",
+    "question": "How do you serve the JinaVL-Reranker model using vLLM?",
+    "answer": "You serve the JinaVL-Reranker model using the command `vllm serve jinaai/jina-reranker-m0` in the OpenAI compatible server.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 22494,
+        "last_character_index": 24288
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "26a726a8-e47e-4933-9563-8b888a485464",
+    "split": "docs",
+    "question": "Which TPU versions are supported by vLLM for Google Cloud TPU?",
+    "answer": "vLLM supports TPU v6e, TPU v5e, TPU v5p, and TPU v4 versions for Google Cloud TPU deployment.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/google_tpu.md",
+        "first_character_index": 0,
+        "last_character_index": 1907
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "becefabd-1c2a-4257-b14c-78733bb1407f",
+    "split": "docs",
+    "question": "What is the recommended tensor parallel size and pipeline parallel size configuration when running vLLM on a Ray cluster with 16 GPUs across 2 nodes?",
+    "answer": "For a Ray cluster with 16 GPUs across 2 nodes (8 GPUs per node), the recommended configuration is to set tensor parallel size to 8 (matching the number of GPUs per node) and pipeline parallel size to 2 (matching the number of nodes). Alternatively, you can set tensor parallel size to 16 (the total number of GPUs in the cluster).",
+    "sources": [
+      {
+        "file_path": "docs/serving/parallelism_scaling.md",
+        "first_character_index": 7232,
+        "last_character_index": 8307
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "32302028-1ea8-40ae-87d6-db98e83f7e49",
+    "split": "docs",
+    "question": "How can you limit the number of compilation jobs when building vLLM to avoid system overload?",
+    "answer": "You can set the MAX_JOBS environment variable to limit simultaneous compilation jobs, for example: `export MAX_JOBS=6` before running `uv pip install -e .`. This is particularly useful for less powerful machines or WSL environments where setting `MAX_JOBS=1` can prevent memory issues during vLLM CUDA installation.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/installation/gpu/cuda.inc.md",
+        "first_character_index": 9569,
+        "last_character_index": 11494
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "dab5d35d-02a9-4ef3-a604-2ef45c2327c2",
+    "split": "docs",
+    "question": "How do you access the parsed response from OpenAI's structured output completion in vLLM?",
+    "answer": "You access the parsed response using `completion.choices[0].message.parsed`, which contains the structured data according to your Pydantic model schema. The parsed object allows you to directly access the defined fields like `steps` and `final_answer` in vLLM's structured outputs feature.",
+    "sources": [
+      {
+        "file_path": "docs/features/structured_outputs.md",
+        "first_character_index": 8447,
+        "last_character_index": 9263
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "0489281a-086d-4851-92ba-c593525fbe36",
+    "split": "docs",
+    "question": "What flag is mandatory to enable automatic function calling in vLLM?",
+    "answer": "The `--enable-auto-tool-choice` flag is mandatory to enable automatic function calling in vLLM, as it tells vLLM that you want to enable the model to generate its own tool calls when it deems appropriate.",
+    "sources": [
+      {
+        "file_path": "docs/features/tool_calling.md",
+        "first_character_index": 5465,
+        "last_character_index": 7110
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b5191cd4-9b74-4211-9e60-6272498deae3",
+    "split": "docs",
+    "question": "How do you apply chat templates to prompts in vLLM?",
+    "answer": "In vLLM, you can apply chat templates by using a tokenizer from transformers. First, load the tokenizer with `AutoTokenizer.from_pretrained(\"/path/to/chat_model\")`, then format your messages as a list of dictionaries with \"role\" and \"content\" keys, and finally call `tokenizer.apply_chat_template()` with `tokenize=False` and `add_generation_prompt=True` parameters to convert the messages into properly formatted text for generation.",
+    "sources": [
+      {
+        "file_path": "docs/getting_started/quickstart.md",
+        "first_character_index": 5145,
+        "last_character_index": 6292
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "db4f05fe-78bf-402f-b02f-630d0a3959c3",
+    "split": "docs",
+    "question": "What is the first step to implement a basic vLLM model?",
+    "answer": "The first step to implement a basic vLLM model is to clone the PyTorch model code from the source repository. For example, vLLM's OPT model was adapted from HuggingFace's modeling_opt.py file, though you must review and adhere to the original code's copyright and licensing terms.",
+    "sources": [
+      {
+        "file_path": "docs/contributing/model/basic.md",
+        "first_character_index": 0,
+        "last_character_index": 512
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4e658668-9e1d-4068-ae99-1f77bab83523",
+    "split": "docs",
+    "question": "What flag must be explicitly passed when serving VLM2Vec-Full model in vLLM to run it in embedding mode?",
+    "answer": "You must explicitly pass `--runner pooling` flag when serving VLM2Vec-Full model in vLLM to run it in embedding mode instead of text generation mode, since VLM2Vec has the same model architecture as Phi-3.5-Vision.",
+    "sources": [
+      {
+        "file_path": "docs/serving/openai_compatible_server.md",
+        "first_character_index": 9910,
+        "last_character_index": 11856
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "189c8b8a-e59c-4fca-92ad-c02df42cbe40",
+    "split": "code",
+    "question": "What activation formats does the fused batched MoE layer return in vLLM?",
+    "answer": "The fused batched MoE layer returns a tuple of two `mk.FusedMoEActivationFormat.BatchedExperts` values from its `activation_formats` property.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/fused_moe/fused_batched_moe.py",
+        "first_character_index": 28416,
+        "last_character_index": 28975
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "02789461-05fd-435d-9673-91606102d6c9",
+    "split": "code",
+    "question": "What are the default values for FP8_MIN and FP8_MAX constants in vLLM's triton_flash_attention module?",
+    "answer": "FP8_MIN defaults to float8_info.min and FP8_MAX defaults to float8_info.max in the triton_flash_attention module.",
+    "sources": [
+      {
+        "file_path": "vllm/attention/ops/triton_flash_attention.py",
+        "first_character_index": 13507,
+        "last_character_index": 13600
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e852801e-b909-4360-82ea-cedb2a1be919",
+    "split": "code",
+    "question": "What determines whether vLLM's sampler returns Pythonized results or deferred Pythonization arguments?",
+    "answer": "The `skip_sampler_cpu_output` flag in `sampling_metadata` determines this behavior. When `skip_sampler_cpu_output` is False, the sampler returns Pythonized sample results and sampled token IDs. When True, it returns deferred Pythonization arguments and sampled token IDs instead.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/sampler.py",
+        "first_character_index": 27480,
+        "last_character_index": 28492
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "0d29b0e8-686c-41b7-9a48-50f8e4bc63de",
+    "split": "code",
+    "question": "What's the default value of trust_remote_code in vLLM's LLM class constructor?",
+    "answer": "The default value of trust_remote_code in the LLM class constructor is False.",
+    "sources": [
+      {
+        "file_path": "vllm/entrypoints/llm.py",
+        "first_character_index": 64076,
+        "last_character_index": 64088
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4235480a-cd9e-42a5-a852-b562386a83a3",
+    "split": "code",
+    "question": "What determines the values in cudagraph_inputs_embeds when capturing CUDA graph shapes in vLLM's ModelRunner?",
+    "answer": "The cudagraph_inputs_embeds values are determined by `self.model_config.enable_prompt_embeds`: if True, it uses `(True, False)` to test both embedding modes; if False, it uses `(False,)` to only test without embeddings.",
+    "sources": [
+      {
+        "file_path": "vllm/worker/model_runner.py",
+        "first_character_index": 64028,
+        "last_character_index": 64925
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "6ffdf5f6-fcd3-4d11-8227-8bedd9b33296",
+    "split": "code",
+    "question": "What conditions must be met for vLLM's ModelRunner to use CUDA graphs instead of the regular model?",
+    "answer": "Two conditions must be met: `prefill_meta` must be `None` and `decode_meta.use_cuda_graph` must be `True`. When both conditions are satisfied, the ModelRunner uses `self.graph_runners[virtual_engine]` instead of `self.model`.",
+    "sources": [
+      {
+        "file_path": "vllm/worker/model_runner.py",
+        "first_character_index": 73641,
+        "last_character_index": 74639
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "c854f979-7900-4772-86c6-f95715529e2d",
+    "split": "code",
+    "question": "What is the default timeout value for vLLM RPC operations?",
+    "answer": "The default RPC timeout is determined by the VLLM_RPC_TIMEOUT environment variable, which is imported from vllm.envs in the multiprocessing client module.",
+    "sources": [
+      {
+        "file_path": "vllm/engine/multiprocessing/client.py",
+        "first_character_index": 1658,
+        "last_character_index": 2238
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "48891f49-3fe1-42f9-8bce-4fc4c8027428",
+    "split": "code",
+    "question": "What does the Gemma3ForCausalLM constructor assert about the tie_word_embeddings configuration?",
+    "answer": "The constructor asserts that `config.tie_word_embeddings` must be enabled (True), as indicated by the assertion `assert config.tie_word_embeddings` with the comment stating that currently all existing Gemma models have this feature enabled.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/gemma3.py",
+        "first_character_index": 19530,
+        "last_character_index": 20493
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "0d9b0dbb-a25d-47eb-b35b-ce02e23fda2b",
+    "split": "code",
+    "question": "What value is passed for ngroups when has_groups is False in the _bmm_chunk_fwd_kernel call?",
+    "answer": "When has_groups is False, the value 1 is passed for the ngroups parameter in the _bmm_chunk_fwd_kernel call.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/mamba/ops/ssd_bmm.py",
+        "first_character_index": 7762,
+        "last_character_index": 8640
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "442c5e35-6424-4acf-8e79-f6da53e478b0",
+    "split": "code",
+    "question": "What is the default cudagraph_support value for TritonAttentionMetadataBuilder?",
+    "answer": "The default cudagraph_support value for TritonAttentionMetadataBuilder is AttentionCGSupport.ALWAYS.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/attention/backends/triton_attn.py",
+        "first_character_index": 2171,
+        "last_character_index": 2927
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d39bfccf-9478-4c98-978d-574c596049b2",
+    "split": "code",
+    "question": "What does the get_num_new_matched_tokens method in NIXLConnector return?",
+    "answer": "The get_num_new_matched_tokens method in NIXLConnector returns a tuple containing two values: an integer representing the number of tokens that can be loaded from the external KV cache beyond what is already computed, and a boolean indicating whether the external KV cache tokens will be loaded asynchronously (between scheduler steps).",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/kv_transfer/kv_connector/v1/nixl_connector.py",
+        "first_character_index": 9604,
+        "last_character_index": 10551
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "870c92da-36bb-4c17-9bdc-0fdbf401105a",
+    "split": "code",
+    "question": "What types are supported as containers in vLLM's JSONTree type definition?",
+    "answer": "The JSONTree type definition in vLLM supports dict, list, and tuple as container types, with dict keys being strings and all containers able to hold nested JSONTree structures or leaf values of type _T.",
+    "sources": [
+      {
+        "file_path": "vllm/utils/jsontree.py",
+        "first_character_index": 0,
+        "last_character_index": 895
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "925270df-9998-43ab-8603-2ef13c809987",
+    "split": "code",
+    "question": "What value does _MAX_IMAGE_SIZE use in vLLM's keye model for determining the image size with most features?",
+    "answer": "The `get_image_size_with_most_features` method in the keye model uses `_MAX_IMAGE_SIZE` for both `image_width` and `image_height` parameters when calling `_get_vision_info` to determine the maximum image size.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/keye.py",
+        "first_character_index": 38439,
+        "last_character_index": 39000
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "6d8a314a-59fa-401c-992b-af647969a6ca",
+    "split": "code",
+    "question": "What is the default language value when None is passed to Whisper's validate_language method?",
+    "answer": "When language is None, the validate_language method defaults to \"en\" and logs a warning message suggesting users can pass a different language in the TranscriptionRequest.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/whisper.py",
+        "first_character_index": 27004,
+        "last_character_index": 27669
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "87977215-9db5-43a6-9e34-186cdfca86ed",
+    "split": "code",
+    "question": "What condition determines whether batch reordering is skipped in GPUModelRunner's update_batch_order method?",
+    "answer": "Batch reordering is skipped when the number of kv_cache_groups in the kv_cache_config is zero (len(self.kv_cache_config.kv_cache_groups) == 0).",
+    "sources": [
+      {
+        "file_path": "vllm/v1/worker/gpu_model_runner.py",
+        "first_character_index": 18368,
+        "last_character_index": 19367
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3be219c4-dec6-4b83-a6e1-39497cf4affd",
+    "split": "code",
+    "question": "What are the default values for tensor fields in vLLM's AiterMLAMetadata class?",
+    "answer": "All tensor fields in AiterMLAMetadata have a default value of None: block_table_bound, paged_kv_indptr, paged_kv_indices, paged_kv_last_page_lens, and qo_indptr are all Optional[torch.Tensor] with None as the default.",
+    "sources": [
+      {
+        "file_path": "vllm/attention/backends/rocm_aiter_mla.py",
+        "first_character_index": 1700,
+        "last_character_index": 2395
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8cb284ad-ec64-4189-ad3a-dd1bcd05bc09",
+    "split": "code",
+    "question": "What error is raised when full attention group ids and other attention group ids interleave in HybridKVCacheCoordinator?",
+    "answer": "A ValueError is raised with the message \"HybridKVCacheCoordinator assumes the full attention group ids and other attention group ids do not interleave, either full attention group ids are before other attention group ids or vice versa. This is for simplifying merging hit_blocks_full_attn and hit_blocks_other_attn to hit_blocks.\"",
+    "sources": [
+      {
+        "file_path": "vllm/v1/core/kv_cache_coordinator.py",
+        "first_character_index": 12110,
+        "last_character_index": 12963
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9ab959ff-efa6-4f66-b2f2-5514f61c82d0",
+    "split": "code",
+    "question": "What is the shape and structure of the array returned by the KV cache mapping metadata computation function in TPUModelRunner?",
+    "answer": "The function returns a 2D numpy array of shape (total_block_len, 3), where each row contains three integers: kv_cache_start_index (starting index in the KV cache), new_kv_start_index (starting index in the new KV cache), and slice_len (length of the slice).",
+    "sources": [
+      {
+        "file_path": "vllm/v1/worker/tpu_model_runner.py",
+        "first_character_index": 25321,
+        "last_character_index": 26354
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f30cdb97-7bbd-469d-8cdf-3b5c50416007",
+    "split": "code",
+    "question": "What is the default value of the z parameter in the selective_state_update function call in vLLM's mamba_mixer2.py?",
+    "answer": "The z parameter is set to None by default in the selective_state_update function call.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/mamba/mamba_mixer2.py",
+        "first_character_index": 29885,
+        "last_character_index": 30632
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "c1da62cd-07b5-4f25-8556-c8b33774b4f4",
+    "split": "code",
+    "question": "What block size divisibility requirement does HybridKVCacheCoordinator enforce when caching is enabled?",
+    "answer": "When caching is enabled, HybridKVCacheCoordinator requires that the block_size of other layers must be divisible by the block_size of full attention layers (other_block_size % full_attention_block_size == 0).",
+    "sources": [
+      {
+        "file_path": "vllm/v1/core/kv_cache_coordinator.py",
+        "first_character_index": 11043,
+        "last_character_index": 12110
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "706af2a5-9d60-42db-be84-211f217e03f3",
+    "split": "code",
+    "question": "What is the default value for min_dynamic_patch parameter in NemotronVL model initialization?",
+    "answer": "The default value for min_dynamic_patch is 1 when it is None.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/nemotron_vl.py",
+        "first_character_index": 6516,
+        "last_character_index": 7527
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4830d85c-33a2-4cef-a1cc-9ccad3e8b51b",
+    "split": "code",
+    "question": "What exception is raised when pixel_values has incorrect number of channels in InternS1VisionEmbeddings forward method?",
+    "answer": "A ValueError is raised with the message \"Make sure that the channel dimension of the pixel values match with the one set in the configuration.\" when the num_channels of pixel_values doesn't match self.num_channels.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/interns1_vit.py",
+        "first_character_index": 2042,
+        "last_character_index": 2682
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "937a3e70-2b84-4431-8cb3-08e01991710f",
+    "split": "code",
+    "question": "What does the HunyuanA13BReasoningParser return when reasoning_content or response_content has zero length?",
+    "answer": "When reasoning_content or response_content has zero length, the HunyuanA13BReasoningParser sets them to None before returning the tuple.",
+    "sources": [
+      {
+        "file_path": "vllm/reasoning/hunyuan_a13b_reasoning_parser.py",
+        "first_character_index": 3715,
+        "last_character_index": 4756
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "24caa63b-ddc4-4894-8da4-36d591ede268",
+    "split": "code",
+    "question": "What are the input tensor shapes and types used in MiddleAllReduceRMSNormPattern's get_inputs method?",
+    "answer": "The get_inputs method in MiddleAllReduceRMSNormPattern creates three input tensors: mm_1, residual, and rms_norm_weights, all with shape [4, 4], using the instance's device and dtype attributes.",
+    "sources": [
+      {
+        "file_path": "vllm/compilation/sequence_parallelism.py",
+        "first_character_index": 5871,
+        "last_character_index": 6442
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "c593f6af-5d7c-472c-91f1-39020982d9d4",
+    "split": "code",
+    "question": "What are all the registered KV connector names in vLLM's KVConnectorFactory?",
+    "answer": "The registered KV connector names are: \"SharedStorageConnector\", \"P2pNcclConnector\", \"LMCacheConnectorV1\", \"NixlConnector\", and \"MultiConnector\".",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/kv_transfer/kv_connector/factory.py",
+        "first_character_index": 2969,
+        "last_character_index": 3947
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "926b7602-3c5a-48fc-9f25-54eb00d78f0d",
+    "split": "code",
+    "question": "What is the default value of the kv_states parameter in HunYuanModel's forward method?",
+    "answer": "The default value of the kv_states parameter is None, as specified in the type hint `kv_states: Optional[tuple[torch.Tensor]] = None`.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/hunyuan_v1.py",
+        "first_character_index": 20779,
+        "last_character_index": 21753
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "794540e4-c04d-4085-9dac-baf3daa46e77",
+    "split": "code",
+    "question": "What is the default value for mlp_bias in ExaoneGatedMLP initialization?",
+    "answer": "The default value for mlp_bias is False, as specified in the getattr call: `getattr(config, \"mlp_bias\", False)`.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/exaone.py",
+        "first_character_index": 9739,
+        "last_character_index": 10720
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9495e881-8b94-4f72-8273-93f5b6ddd335",
+    "split": "code",
+    "question": "What happens when depths parameter is passed as a string in OvisConfig?",
+    "answer": "When depths is passed as a string, it gets converted to a list of integers by splitting on the '|' character and converting each part to an integer using `[int(x) for x in depths.split('|')]`.",
+    "sources": [
+      {
+        "file_path": "vllm/transformers_utils/configs/ovis.py",
+        "first_character_index": 3435,
+        "last_character_index": 4523
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "56027a35-434a-4c25-9e4d-7964096500c7",
+    "split": "code",
+    "question": "What hyperparameters must be shared across all layers in vLLM's FlashInfer backend according to infer_global_hyperparameters?",
+    "answer": "The FlashInfer backend requires all layers to share the same values for three hyperparameters: `window_left`, `logits_soft_cap`, and `sm_scale`.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/attention/backends/utils.py",
+        "first_character_index": 11063,
+        "last_character_index": 11792
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "495d3729-74d3-4263-b7e6-89dbdca55574",
+    "split": "code",
+    "question": "What is the return type annotation for the _apply_matches function in vLLM's multimodal processing module?",
+    "answer": "The _apply_matches function returns `list[_S]`, where `_S` is a type variable representing the same type as the input prompt parameter.",
+    "sources": [
+      {
+        "file_path": "vllm/multimodal/processing.py",
+        "first_character_index": 20992,
+        "last_character_index": 21388
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9f1db215-19ff-4475-bdd5-dd7caf6bf807",
+    "split": "code",
+    "question": "What are the default percentiles calculated for ITL and E2EL metrics in vLLM's serve benchmark?",
+    "answer": "The code references `selected_percentiles` to calculate percentiles for both inter-token latency (ITL) and end-to-end latency (E2EL) metrics, but the specific default values are not visible in this code snippet as `selected_percentiles` is defined elsewhere in the function.",
+    "sources": [
+      {
+        "file_path": "vllm/benchmarks/serve.py",
+        "first_character_index": 12209,
+        "last_character_index": 12657
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "1d220c05-3d71-4af7-95f8-fca998bade77",
+    "split": "code",
+    "question": "What happens when min_dynamic_patch is None in InternVL's initialization?",
+    "answer": "When min_dynamic_patch is None, it gets assigned the value from config.min_dynamic_patch, and then an assertion ensures it's an integer type.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/internvl.py",
+        "first_character_index": 10569,
+        "last_character_index": 11577
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "fd5cc0f3-ab99-4dcd-8c00-78459828605a",
+    "split": "code",
+    "question": "What is the default value of _is_remote_reader in vLLM's shared memory broadcast implementation?",
+    "answer": "The default value of _is_remote_reader is False, as it's explicitly set to False during initialization with the comment \"rank does not matter for remote readers\".",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/device_communicators/shm_broadcast.py",
+        "first_character_index": 11781,
+        "last_character_index": 12407
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a179e20d-14e2-4d73-8cb1-74b1145437e3",
+    "split": "code",
+    "question": "What are the default values for alpha and limit parameters in vLLM's SwiGLUOAI activation layer?",
+    "answer": "The default values are alpha=1.702 and limit=7.0 in the SwiGLUOAI class __init__ method.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/activation.py",
+        "first_character_index": 9077,
+        "last_character_index": 10030
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b6c6a88c-ffc7-486a-a0c7-89ab38cc8e18",
+    "split": "code",
+    "question": "What's the default value of the image_mode parameter in vLLM's fetch_video_async method?",
+    "answer": "The default value of the image_mode parameter in fetch_video_async is \"RGB\".",
+    "sources": [
+      {
+        "file_path": "vllm/multimodal/utils.py",
+        "first_character_index": 9025,
+        "last_character_index": 10000
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9d2dd3eb-e569-46ea-a9d5-dea4bb6055e6",
+    "split": "code",
+    "question": "What happens if you try to call patch_tensor_parallel_group when the tensor parallel state is already patched?",
+    "answer": "The function raises an AssertionError with the message \"Should not call when it's already patched\" because it checks `assert not _TP_STATE_PATCHED` at the beginning.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/parallel_state.py",
+        "first_character_index": 47759,
+        "last_character_index": 48757
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f518d56b-911f-45c8-8392-cfe35cc49704",
+    "split": "code",
+    "question": "What does the MessageQueue.create_from_handle method return after calling wait_until_ready in vLLM's shared memory broadcast implementation?",
+    "answer": "The MessageQueue.create_from_handle method returns a buffer_io object that implements message queue functionality for inter-process communication, and after calling wait_until_ready() on it, the method returns this buffer_io object ready for use.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/device_communicators/shm_broadcast.py",
+        "first_character_index": 24436,
+        "last_character_index": 24959
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "2e74c1a5-6081-40e2-9049-a03ef68ee261",
+    "split": "code",
+    "question": "What happens when cudagraph_capture_sizes is already set in vLLM's init_with_cudagraph_sizes method?",
+    "answer": "When cudagraph_capture_sizes is already set, the method de-duplicates the existing sizes using `list(set(self.cudagraph_capture_sizes))` and logs a message if duplicates were found, indicating that the sizes specified by the model runner are overridden by the config's deduplicated sizes.",
+    "sources": [
+      {
+        "file_path": "vllm/config/compilation.py",
+        "first_character_index": 20971,
+        "last_character_index": 21816
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e9157a40-4465-4de7-bd4d-033b4c173493",
+    "split": "code",
+    "question": "What is the requires_grad value set for parameters in GPTQMarlin24's process_weights_after_loading method?",
+    "answer": "All parameters (B_24, s, B_meta, and workspace) are set with requires_grad=False in the process_weights_after_loading method.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/gptq_marlin_24.py",
+        "first_character_index": 9289,
+        "last_character_index": 10172
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "dc9be3c4-dbfd-4384-8cd1-ce3f37b0ac2e",
+    "split": "code",
+    "question": "What happens when encoder_inputs is None in the encoder_seq creation in LLMEngine?",
+    "answer": "When encoder_inputs is None, encoder_seq is set to None rather than creating a Sequence object.",
+    "sources": [
+      {
+        "file_path": "vllm/engine/llm_engine.py",
+        "first_character_index": 23611,
+        "last_character_index": 23832
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b0fa5524-77d7-4288-8967-f606f32d9066",
+    "split": "code",
+    "question": "What assertion is made about vocab_size and tp_size when loading fairseq2 LLaMA embedding weights?",
+    "answer": "The code asserts that `loaded_weight.shape[dim] * self.tp_size == self.config.vocab_size` with the message \"vocab_size should be divisible by tp_size.\" This ensures that the vocabulary size is evenly divisible by the tensor parallel size when embedding weights are being loaded.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/fairseq2_llama.py",
+        "first_character_index": 5507,
+        "last_character_index": 6527
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "67336e58-c7ca-4ea4-a6ac-4b976ab3f1e8",
+    "split": "code",
+    "question": "What is the default max_threads value used when creating the GrammarCompiler in vLLM's XGrammar backend?",
+    "answer": "The default max_threads value is 8 when creating the xgr.GrammarCompiler in the XGrammar backend.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/structured_output/backend_xgrammar.py",
+        "first_character_index": 3143,
+        "last_character_index": 3580
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e10b9511-a69a-4206-bef4-eaa7f7159090",
+    "split": "code",
+    "question": "What does the usage property return in vLLM's KV cache manager?",
+    "answer": "The usage property returns a float representing the KV cache usage between 0.0 and 1.0, obtained by calling self.block_pool.get_usage().",
+    "sources": [
+      {
+        "file_path": "vllm/v1/core/kv_cache_manager.py",
+        "first_character_index": 3749,
+        "last_character_index": 4566
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5e9ccc6d-8cc5-4579-b891-8fb40b40012a",
+    "split": "code",
+    "question": "What is the default value of the stream parameter in vLLM's OpenAI protocol translation parameters?",
+    "answer": "The default value of the `stream` parameter is `False`.",
+    "sources": [
+      {
+        "file_path": "vllm/entrypoints/openai/protocol.py",
+        "first_character_index": 86493,
+        "last_character_index": 87528
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "63554d9e-17e8-478c-b29a-4f3b013c7e91",
+    "split": "code",
+    "question": "What is the default value for the multimodal_embeddings parameter in the get_input_embeddings method of the Molmo model?",
+    "answer": "The default value for the multimodal_embeddings parameter in the get_input_embeddings method is None.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/molmo.py",
+        "first_character_index": 51659,
+        "last_character_index": 52651
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "409b78bd-dafb-46b1-b453-3d16a1ae058b",
+    "split": "code",
+    "question": "What are the supported bit values for W4A16Sparse24 quantization in vLLM's compressed tensors?",
+    "answer": "The supported bit values for W4A16Sparse24 quantization are defined in the `W4A16SPARSE24_SUPPORTED_BITS` constant, and the code checks if `weight_quant.num_bits` is in this set when using the marlin_24 compression format.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors.py",
+        "first_character_index": 18463,
+        "last_character_index": 19405
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d7e4baa5-3106-4de4-b164-4de3211de137",
+    "split": "code",
+    "question": "What class does TritonScaledMMLinearKernel inherit from in vLLM's quantization kernels?",
+    "answer": "TritonScaledMMLinearKernel inherits from CutlassScaledMMLinearKernel.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/kernels/scaled_mm/triton.py",
+        "first_character_index": 0,
+        "last_character_index": 375
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "67acae76-ee3b-46c1-a287-044c71fc78ac",
+    "split": "code",
+    "question": "What quantization methods are supported for Mixtral models in vLLM?",
+    "answer": "The supported quantization methods for Mixtral models are: \"fp8\", \"compressed-tensors\", \"gptq_marlin\", \"awq_marlin\", \"quark\", and \"bitsandbytes\". If any other quantization method is used with MixtralForCausalLM, it gets converted to QuantMixtralForCausalLM instead.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/model_loader/utils.py",
+        "first_character_index": 6955,
+        "last_character_index": 7735
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "c544d846-d47c-4254-9ff4-a79467b234ce",
+    "split": "code",
+    "question": "How many bytes are allocated for the internal field in ncclUniqueId structure in vLLM's PyNCCL wrapper?",
+    "answer": "The internal field in ncclUniqueId structure is allocated 128 bytes, defined as `ctypes.c_byte * 128`.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/device_communicators/pynccl_wrapper.py",
+        "first_character_index": 985,
+        "last_character_index": 2019
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "16deace0-4e51-4c3d-8f04-ffeadc97a2c3",
+    "split": "code",
+    "question": "What is the default value of pp_locks in RayDistributedExecutor?",
+    "answer": "The default value of pp_locks in RayDistributedExecutor is None, with type hint Optional[List[asyncio.Lock]].",
+    "sources": [
+      {
+        "file_path": "vllm/executor/ray_distributed_executor.py",
+        "first_character_index": 4258,
+        "last_character_index": 4978
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "12f7ab0a-fce8-4891-a6ed-9b402171b591",
+    "split": "code",
+    "question": "What does the extract_tool_calls method in MistralToolParser return when the bot_token is not present in the model output?",
+    "answer": "It returns an ExtractedToolCallInformation object with tools_called=False, tool_calls=[] (empty list), and content=model_output (the original model output).",
+    "sources": [
+      {
+        "file_path": "vllm/entrypoints/openai/tool_parsers/mistral_tool_parser.py",
+        "first_character_index": 4039,
+        "last_character_index": 4873
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "96e48e54-5737-4f6e-a274-b5de6c36997d",
+    "split": "code",
+    "question": "What happens when key is None in the CPU attention backend's reshape logic?",
+    "answer": "When key is None, the code asserts that value must also be None, ensuring both key and value tensors are either both present or both absent together.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/attention/backends/cpu_attn.py",
+        "first_character_index": 19793,
+        "last_character_index": 20739
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f1fb35e6-1a65-48e1-8c99-f5e25df6f00c",
+    "split": "code",
+    "question": "What is the default data type for indices_type parameter in the routing simulator's expert selection method?",
+    "answer": "The default data type for indices_type is torch.long, which is set when indices_type is None.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/fused_moe/routing_simulator.py",
+        "first_character_index": 3174,
+        "last_character_index": 4190
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5dee8def-bbf7-44f4-b163-96968cd1572f",
+    "split": "code",
+    "question": "What dimension handling does vLLM's transformers model apply to vision embeddings when they are 2D tensors?",
+    "answer": "When vision_embeddings is a 2D tensor (ndim == 2), vLLM automatically adds an extra dimension using unsqueeze(0) to make it 3D before further processing.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/transformers.py",
+        "first_character_index": 32063,
+        "last_character_index": 32808
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4d752f03-1006-4df9-9fde-98b947c79f66",
+    "split": "code",
+    "question": "What is the default value of the pin_memory parameter in MultiModalKwargs._try_stack method?",
+    "answer": "The default value of the pin_memory parameter in MultiModalKwargs._try_stack method is False.",
+    "sources": [
+      {
+        "file_path": "vllm/multimodal/inputs.py",
+        "first_character_index": 22826,
+        "last_character_index": 23889
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b0792edd-53b8-40b5-aaf0-d00416dfae23",
+    "split": "code",
+    "question": "What are all possible values for the QuickReduceRegime enum in vLLM's distributed communication?",
+    "answer": "The QuickReduceRegime enum has 5 possible values: FP (0), INT8 (1), INT6 (2), INT4 (3), and NONE (4).",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/device_communicators/quick_all_reduce.py",
+        "first_character_index": 949,
+        "last_character_index": 1812
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3786b834-ca12-4d88-9b2e-47c2d878827c",
+    "split": "code",
+    "question": "What's the default value of max_position_embeddings in ChameleonSwinDecoderLayer?",
+    "answer": "The default value of max_position_embeddings is 4096 in the ChameleonSwinDecoderLayer constructor when the attribute is not present in the config object.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/chameleon.py",
+        "first_character_index": 15006,
+        "last_character_index": 15832
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "9024881e-e178-462f-8435-7fc4609da96a",
+    "split": "code",
+    "question": "What happens when the residual parameter is None in Gemma2DecoderLayer's forward method?",
+    "answer": "When residual is None, it is set to the input hidden_states value, and then hidden_states is passed through the input_layernorm. This differs from the non-None case where both hidden_states and residual are processed together by the input_layernorm.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/gemma2.py",
+        "first_character_index": 8807,
+        "last_character_index": 9692
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a1660e69-44a1-48da-a2a7-5a84be305016",
+    "split": "code",
+    "question": "What is the default value of the spec_step_index parameter in DeepSeekMultiTokenPredictor's forward method?",
+    "answer": "The default value of spec_step_index in the forward method is 0.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/deepseek_mtp.py",
+        "first_character_index": 2477,
+        "last_character_index": 3444
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "22018181-e293-4308-8289-ecfaac26406f",
+    "split": "code",
+    "question": "What happens when a reshape operation in vLLM's noop elimination has more than one -1 in the shape parameter?",
+    "answer": "The reshape operation is skipped and not eliminated. The code checks if `shape.count(-1) > 1` and continues to the next node without performing any optimization, as this represents invalid reshape arguments.",
+    "sources": [
+      {
+        "file_path": "vllm/compilation/noop_elimination.py",
+        "first_character_index": 2778,
+        "last_character_index": 3877
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "79ef0eef-b8b3-49d1-a8d9-30b99ce0c4d7",
+    "split": "code",
+    "question": "What is the default value for the use_bitsandbytes_4bit attribute when it's not present on a parameter object in vLLM's linear layer?",
+    "answer": "The default value is False, as specified by the getattr call: `getattr(param, \"use_bitsandbytes_4bit\", False)`.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/linear.py",
+        "first_character_index": 46123,
+        "last_character_index": 47089
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "92d69198-b21e-416c-a8ba-bc8a6653c4d9",
+    "split": "code",
+    "question": "What conditions must be met for use_aiter_and_is_supported to be True in vLLM's FP8 quantization?",
+    "answer": "For use_aiter_and_is_supported to be True, all four conditions must be met: the platform must be ROCm, VLLM_ROCM_USE_AITER environment variable must be set, VLLM_ROCM_USE_AITER_LINEAR environment variable must be set, and the platform must support FP8_FNUZ format.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/fp8.py",
+        "first_character_index": 8412,
+        "last_character_index": 9519
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "7d3ccec1-4036-465d-a081-579807af5896",
+    "split": "code",
+    "question": "What are the supported spatial pooling modes in LlavaNextVideoPooler?",
+    "answer": "The LlavaNextVideoPooler supports two spatial pooling modes: \"average\" (which uses nn.AvgPool2d) and \"max\" (which uses nn.MaxPool2d). Any other mode will raise a ValueError.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/llava_next_video.py",
+        "first_character_index": 7324,
+        "last_character_index": 8148
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cb7cbccd-ab96-4695-9c7a-9197e6b254a8",
+    "split": "code",
+    "question": "What is the default value for apply_router_weight_on_input parameter in the DeepGemm MoE kernel function call?",
+    "answer": "The apply_router_weight_on_input parameter is passed as a keyword argument without a default value in the function call, meaning it must be provided by the caller when invoking the FusedMoEModularKernel.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/fused_moe/deep_gemm_moe.py",
+        "first_character_index": 13157,
+        "last_character_index": 13634
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "02b4ba56-66f8-4cf5-8d0a-621ea70030e7",
+    "split": "code",
+    "question": "What are the compilation levels that cause do_not_compile to be set to True in vLLM's compilation decorator?",
+    "answer": "The do_not_compile flag is set to True when the compilation level is CompilationLevel.NO_COMPILATION or CompilationLevel.DYNAMO_AS_IS, or when the system doesn't support dynamo, or when the class should be ignored for torch compile.",
+    "sources": [
+      {
+        "file_path": "vllm/compilation/decorators.py",
+        "first_character_index": 6249,
+        "last_character_index": 7113
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a96c1a73-d5d0-4599-85ac-9dd74c52c20f",
+    "split": "code",
+    "question": "What is the default value of inputs_embeds parameter in DeepSeek model's forward method?",
+    "answer": "The default value of inputs_embeds parameter in the DeepSeek model's forward method is None.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/deepseek.py",
+        "first_character_index": 14388,
+        "last_character_index": 14777
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "94ade925-c345-413f-8410-48cf17c65b99",
+    "split": "code",
+    "question": "What prefixes does the AutoWeightsLoader skip in MiniCPM Eagle model when tie_word_embeddings is True?",
+    "answer": "When tie_word_embeddings is True, the AutoWeightsLoader skips the prefix \"lm_head.\" in the MiniCPM Eagle model's load_weights method.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/minicpm_eagle.py",
+        "first_character_index": 15245,
+        "last_character_index": 15901
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "eea9e938-c8f8-4a7a-b262-66e81e9a0201",
+    "split": "code",
+    "question": "What are all the NVML GPU instance profile constants defined in vLLM's pynvml module?",
+    "answer": "The NVML GPU instance profile constants are: NVML_GPU_INSTANCE_PROFILE_1_SLICE_GFX (0xA), NVML_GPU_INSTANCE_PROFILE_2_SLICE_GFX (0xB), NVML_GPU_INSTANCE_PROFILE_4_SLICE_GFX (0xC), and NVML_GPU_INSTANCE_PROFILE_COUNT (0xD).",
+    "sources": [
+      {
+        "file_path": "vllm/third_party/pynvml.py",
+        "first_character_index": 82787,
+        "last_character_index": 83673
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b9f85113-c988-47ad-993b-01aec1efe22d",
+    "split": "code",
+    "question": "What are the shard_id values used in the stacked_params_mapping for gate_up_proj in vLLM's step3_text model?",
+    "answer": "The shard_id values are 0 for .gate_proj and 1 for .up_proj when mapping from .gate_up_proj in the stacked_params_mapping.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/step3_text.py",
+        "first_character_index": 16840,
+        "last_character_index": 17846
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "ef591476-8135-4e25-baa9-96c42dbe3ee5",
+    "split": "code",
+    "question": "What is the default value of tie_word_embeddings in vLLM's FalconForCausalLM class when the config doesn't specify it?",
+    "answer": "True. The FalconForCausalLM class sets tie_word_embeddings to True by default when config.tie_word_embeddings is None, because only Falcon-11B doesn't share lm_head weight with word embeddings and previous Falcon models don't have the tie_word_embeddings config.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/falcon.py",
+        "first_character_index": 18924,
+        "last_character_index": 19993
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "df39833c-7c8c-4e82-b6fd-a66f3b8ce929",
+    "split": "code",
+    "question": "What is the default value for engine_id when creating connectors in MultiKVConnector?",
+    "answer": "The default value for engine_id is `vllm_config.kv_transfer_config.engine_id`, retrieved using `ktc.get(\"engine_id\", vllm_config.kv_transfer_config.engine_id)` in the MultiKVConnector.__init__ method.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/kv_transfer/kv_connector/v1/multi_connector.py",
+        "first_character_index": 1385,
+        "last_character_index": 2495
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "17204ac3-d7f6-4d82-b2fc-69125f6bb1e9",
+    "split": "code",
+    "question": "What datasets are supported by ASRDataset and MLPerfDataset in vLLM benchmarks?",
+    "answer": "ASRDataset and MLPerfDataset each have their own SUPPORTED_DATASET_PATHS class attributes that define which dataset paths they support, and both automatically set the hf_split to \"train\" when their supported datasets are used.",
+    "sources": [
+      {
+        "file_path": "vllm/benchmarks/datasets.py",
+        "first_character_index": 25581,
+        "last_character_index": 26446
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "d40d1b96-89d9-49b0-b2bb-85202cb491f3",
+    "split": "code",
+    "question": "What are some of the test model names used in vLLM's test_utils.py for testing different model types and quantization methods?",
+    "answer": "The test_utils.py file includes test models such as \"nm-testing/TinyLlama-1.1B-Chat-v1.0-gsm8k-pruned.2of4-tensor_wts_tensor_act_int8-BitM\" for BitM quantization, \"nm-testing/TinyLlama-1.1B-Chat-v1.0-INT8-Dynamic-IA-Per-Channel-Weight-testing\" for INT8 dynamic quantization, \"nvidia/NVLM-D-72B\" for large vision-language models, \"Qwen/Qwen2-VL-2B-Instruct\" for vision-language models, \"sentence-transformers/all-roberta-large-v1\" for embedding models, and \"shuyuej/Llama-3.2-1B-Instruct-GPTQ\" for GPTQ quantization testing.",
+    "sources": [
+      {
+        "file_path": "vllm/test_utils.py",
+        "first_character_index": 4504,
+        "last_character_index": 5611
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5ddbbb60-4372-4ce2-b0a9-64e59803e7e1",
+    "split": "code",
+    "question": "What is the default value of global_num_experts parameter in the forward_xpu method of vLLM's fused MOE layer?",
+    "answer": "The default value of global_num_experts in the forward_xpu method is -1.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/fused_moe/layer.py",
+        "first_character_index": 23124,
+        "last_character_index": 23989
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8e79a26d-0035-449d-9fb8-e50ac242396a",
+    "split": "code",
+    "question": "What is the default value for the intermediate_tensors parameter in GranitemoehybridForCausalLM's forward method?",
+    "answer": "The default value for the intermediate_tensors parameter in the forward method is None, as specified by the type hint Optional[IntermediateTensors] = None.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/granitemoehybrid.py",
+        "first_character_index": 26157,
+        "last_character_index": 26669
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4ac3026d-7b4f-4723-9116-7aa546efed71",
+    "split": "code",
+    "question": "What is the default value of the dst parameter in tensor_model_parallel_gather function?",
+    "answer": "The default value of the `dst` parameter in `tensor_model_parallel_gather` is 0.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/communication_op.py",
+        "first_character_index": 931,
+        "last_character_index": 1562
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e5baac73-d8dc-4ea5-ac58-41c8d3419f28",
+    "split": "code",
+    "question": "What value is used for m_j when the computed maximum is negative infinity in vLLM's Triton attention implementation?",
+    "answer": "When m_j is negative infinity (due to masking of the entire row in sliding window attention), it is set to 0.0 to avoid NaN values using `tl.where(m_j > float(\"-inf\"), m_j, 0.0)`.",
+    "sources": [
+      {
+        "file_path": "vllm/attention/ops/triton_unified_attention.py",
+        "first_character_index": 8483,
+        "last_character_index": 9609
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b01b004f-6b12-404b-923d-c9e9aac9fb84",
+    "split": "code",
+    "question": "What is the default value of the pad_to parameter in vLLM's pad_vocab_size function?",
+    "answer": "The default value of the pad_to parameter in pad_vocab_size function is DEFAULT_VOCAB_PADDING_SIZE.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/vocab_parallel_embedding.py",
+        "first_character_index": 1845,
+        "last_character_index": 2733
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "6adb31ac-4f50-4dc4-8383-47b6c47a3a3f",
+    "split": "code",
+    "question": "What is the default lora_int_id value when lora_request is None in vLLM's sequence?",
+    "answer": "The default lora_int_id value is 0 when lora_request is None, as returned by the lora_int_id property.",
+    "sources": [
+      {
+        "file_path": "vllm/sequence.py",
+        "first_character_index": 19719,
+        "last_character_index": 20042
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5cd305eb-6726-4663-a730-441d0060daf4",
+    "split": "code",
+    "question": "What condition must be met for prompt_tokens_details to be included in the final usage info in vLLM's completion serving?",
+    "answer": "Both `self.enable_prompt_tokens_details` and `num_cached_tokens` must be truthy values for `prompt_tokens_details` to be added to the `final_usage_info`.",
+    "sources": [
+      {
+        "file_path": "vllm/entrypoints/openai/serving_completion.py",
+        "first_character_index": 19314,
+        "last_character_index": 20368
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "30622359-490d-493a-8f1c-6f05f80bc91b",
+    "split": "code",
+    "question": "What happens to input_ids when inputs_embeds is None in LlaVA-NeXT-Video's forward pass?",
+    "answer": "When inputs_embeds is None, the input_ids is set to None after vision embeddings are generated and input embeddings are obtained, so that only inputs_embeds is passed to the language model.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/llava_next_video.py",
+        "first_character_index": 16530,
+        "last_character_index": 17564
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "ce1a4fb2-2386-462d-9e53-7c343d769c9a",
+    "split": "code",
+    "question": "What environment variable does vLLM's collect_env.py check as a fallback when CUDNN library detection fails?",
+    "answer": "The CUDNN_LIBRARY environment variable is checked as a fallback when the initial CUDNN library detection returns empty output or non-standard return codes (not 0 or 1).",
+    "sources": [
+      {
+        "file_path": "vllm/collect_env.py",
+        "first_character_index": 7398,
+        "last_character_index": 8061
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "17087e20-d7c9-4c3a-9b8b-0e948a681694",
+    "split": "code",
+    "question": "What parameter value is set for requires_grad when creating Parameter objects in _load_weights_from_qkv_linear method?",
+    "answer": "The requires_grad parameter is set to False for all Parameter objects (q_weight, k_weight, and v_weight) created in the _load_weights_from_qkv_linear method.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/tpu_distributed_utils.py",
+        "first_character_index": 2425,
+        "last_character_index": 3212
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "b7a33ae4-5232-47be-b8fc-9370be3ab073",
+    "split": "code",
+    "question": "What are the dimensions and data types of the tensors returned by get_inputs method in LastAllReduceRMSNormPattern?",
+    "answer": "The get_inputs method in LastAllReduceRMSNormPattern returns three tensors, all with dimensions [4, 4]: mm_1 (empty tensor), residual (empty tensor), and rms_norm_weights (empty tensor). All tensors use the instance's device and dtype attributes.",
+    "sources": [
+      {
+        "file_path": "vllm/compilation/sequence_parallelism.py",
+        "first_character_index": 7405,
+        "last_character_index": 7916
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "3c524f7f-48dd-49f2-95a6-a668f6d5af26",
+    "split": "code",
+    "question": "Can draft_probs be None in vLLM's rejection sampler and when does this happen?",
+    "answer": "Yes, draft_probs can be None in the rejection sampler. This happens when probabilities are not provided, specifically in the case of ngram spec decode.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/sample/rejection_sampler.py",
+        "first_character_index": 2267,
+        "last_character_index": 3845
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "a99a010d-4de4-4f17-ac4f-bf31f19db7ea",
+    "split": "code",
+    "question": "What parameter type does the copy_operation parameter accept in NixlConnector's set_host_xfer_buffer_ops method?",
+    "answer": "The copy_operation parameter accepts type CopyBlocksOp in the set_host_xfer_buffer_ops method.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/kv_transfer/kv_connector/v1/nixl_connector.py",
+        "first_character_index": 27233,
+        "last_character_index": 27673
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "ec9d99ac-0dd1-4e40-b840-df41a82aff1b",
+    "split": "code",
+    "question": "What value is used for the num_kv_heads parameter when calling get_mla_metadata in FlashMLAState's graph_capture method?",
+    "answer": "The value 1 is used for the num_kv_heads parameter, with a comment indicating \"MQA for the decode path\" (Multi-Query Attention).",
+    "sources": [
+      {
+        "file_path": "vllm/attention/backends/flashmla.py",
+        "first_character_index": 2893,
+        "last_character_index": 3766
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "c741046d-939d-4493-bd9a-2a5d89cc5f7f",
+    "split": "code",
+    "question": "What is the default value of the bias parameter in the __init__ method of vLLM's mllama model convolution class?",
+    "answer": "The default value of the bias parameter is False.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/mllama.py",
+        "first_character_index": 15566,
+        "last_character_index": 16314
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "df5084f8-4378-43c9-aaf1-55147460923a",
+    "split": "code",
+    "question": "What is the constant value for NVML_FI_DEV_NVLINK_RECOVERY_ERROR_COUNT_TOTAL in vLLM's pynvml module?",
+    "answer": "The constant value is 59, representing the NVLink Recovery Error Counter total for all Lanes.",
+    "sources": [
+      {
+        "file_path": "vllm/third_party/pynvml.py",
+        "first_character_index": 21285,
+        "last_character_index": 22291
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "83396129-7585-435e-9683-271ddfa46475",
+    "split": "code",
+    "question": "What are the expected tensor dimensions for w13_weight_scale in vLLM's MXFP4 quantization layer?",
+    "answer": "The w13_weight_scale tensor must have 3 dimensions with shape [num_experts, intermediate_size * 2, hidden_size // sf_block_size].",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/mxfp4.py",
+        "first_character_index": 11210,
+        "last_character_index": 12073
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "da1e13f1-5be1-4854-ac7c-4ee8f6508469",
+    "split": "code",
+    "question": "What's the default value of min_stats_update_interval_ms in DPCoordinatorProc's __init__ method?",
+    "answer": "The default value of min_stats_update_interval_ms is 100 milliseconds in the DPCoordinatorProc.__init__ method.",
+    "sources": [
+      {
+        "file_path": "vllm/v1/engine/coordinator.py",
+        "first_character_index": 4418,
+        "last_character_index": 5414
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "8b219348-ad43-407d-9b13-46cd8fa2fa1c",
+    "split": "code",
+    "question": "What does the simple_buffer module return when tokens_recver is None in the KV lookup buffer?",
+    "answer": "The simple_buffer module returns `True` when `tokens_recver` is None, which represents a consumer sending an empty request with \"DROP SELECT * LIMIT 1\" semantics, meaning any data in the buffer can be drop-selected.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/kv_transfer/kv_lookup_buffer/simple_buffer.py",
+        "first_character_index": 2062,
+        "last_character_index": 2872
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "f9d7bb96-a32b-4caf-86a0-158a821354c4",
+    "split": "code",
+    "question": "What is the default value of the cutlass_block_fp8_supported parameter in apply_w8a8_block_fp8_linear?",
+    "answer": "The default value of cutlass_block_fp8_supported parameter in apply_w8a8_block_fp8_linear is CUTLASS_BLOCK_FP8_SUPPORTED (a constant defined elsewhere in the module).",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/layers/quantization/utils/fp8_utils.py",
+        "first_character_index": 3702,
+        "last_character_index": 4162
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "e9b6052b-222e-432d-9582-064471de4b91",
+    "split": "code",
+    "question": "What is the default value of BLOCK_TABLE_EXTENDER in MLACommonMetadataBuilder?",
+    "answer": "The default value of BLOCK_TABLE_EXTENDER in MLACommonMetadataBuilder is an empty list of lists: `[]` with type hint `list[list[int]]`.",
+    "sources": [
+      {
+        "file_path": "vllm/attention/backends/mla/common.py",
+        "first_character_index": 25304,
+        "last_character_index": 26305
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "4a5b9aca-fbf7-486d-b210-47913db68ba7",
+    "split": "code",
+    "question": "What condition prevents tensors from being moved to device in FlashInfer attention backend's prepare method?",
+    "answer": "When `self.is_profile_run` is True, the tensors (paged_kv_indptr, paged_kv_last_page_len, block_table_bound, seq_lens_tensor, and paged_kv_indices) are not moved to the device because flash attention is used for profiling to determine the number of blocks, so flashinfer input preparation is skipped.",
+    "sources": [
+      {
+        "file_path": "vllm/attention/backends/flashinfer.py",
+        "first_character_index": 20391,
+        "last_character_index": 21671
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "43927740-4195-49d1-b606-e2e813d3e2fe",
+    "split": "code",
+    "question": "What's the default value of the gpu parameter in vLLM's get_max_shared_memory_bytes function?",
+    "answer": "The default value of the gpu parameter in get_max_shared_memory_bytes is 0.",
+    "sources": [
+      {
+        "file_path": "vllm/utils/__init__.py",
+        "first_character_index": 14136,
+        "last_character_index": 14915
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "ea812b8d-317d-48bd-a149-bf73747592d5",
+    "split": "code",
+    "question": "What is the type hint for the kv_range_for_decode parameter in the _attention_with_mask method?",
+    "answer": "The kv_range_for_decode parameter has the type hint `list[tuple[int, int]]`, indicating it expects a list of tuples where each tuple contains two integers.",
+    "sources": [
+      {
+        "file_path": "vllm/model_executor/models/mllama.py",
+        "first_character_index": 37965,
+        "last_character_index": 38201
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "5ff8e342-b4e2-45e1-9ef0-990915c5bb1f",
+    "split": "code",
+    "question": "What is the default timeout value for VLLM_RPC_TIMEOUT environment variable?",
+    "answer": "The default value for VLLM_RPC_TIMEOUT is 10000 milliseconds (10 seconds), as specified in the lambda function that calls `int(os.getenv(\"VLLM_RPC_TIMEOUT\", \"10000\"))`.",
+    "sources": [
+      {
+        "file_path": "vllm/envs.py",
+        "first_character_index": 26404,
+        "last_character_index": 27385
+      }
+    ],
+    "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cc784ab6-ef8a-402d-b874-4160ec7c87f1",
+    "split": "code",
+    "question": "What determines whether custom allreduce is enabled in vLLM's CudaCommunicator?",
+    "answer": "Custom allreduce is enabled only when \"tp\" is present in the unique_name parameter and the global _ENABLE_CUSTOM_ALL_REDUCE flag is True. If \"tp\" is not in unique_name, use_custom_allreduce is set to False regardless of the global flag.",
+    "sources": [
+      {
+        "file_path": "vllm/distributed/device_communicators/cuda_communicator.py",
+        "first_character_index": 683,
+        "last_character_index": 1657
+      }
+    ],
+    "difficulty": "synthetic"
+  }
+]
