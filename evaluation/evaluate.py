@@ -150,7 +150,7 @@ def main(
     for num, entry in results.items():
         print(f"--- recall@{num} ---")
         print(f"  lexical:        {entry['lexical']:.3f}")
-        if "lexical_graph" in entry:
+        if "lexical+graph" in entry:
             print(f"lexical+graph: {entry['lexical+graph']:.3f}")
         for split, s in entry["per_split"].items():
             line = f"    {split} (n={s['n']}): lexical={s['lexical']:.3f}"
