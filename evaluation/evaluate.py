@@ -147,7 +147,16 @@ def main(
         k, int(hops), bool(use_graph), database,
     )
 
-    print(results)
+    for num, entry in results.items():
+        print(f"--- recall@{num} ---")
+        print(f"  lexical:        {entry['lexical']:.3f}")
+        if "lexical_graph" in entry:
+            print(f"lexical+graph: {entry['lexical+graph']:.3f}")
+        for split, s in entry["per_split"].items():
+            line = f"    {split} (n={s['n']}): lexical={s['lexical']:.3f}"
+            if "lexical+graph" in s:
+                line += f" lexical+graph={s['lexical+graph']:.3f}"
+            print(line) 
 
 
 if __name__ == "__main__":
