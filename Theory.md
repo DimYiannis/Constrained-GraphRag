@@ -186,9 +186,6 @@ Worth it exactly when the same expensive computation recurs often enough
 that the storage cost pays for itself in time saved; not worth it for
 work that's already cheap or never repeats.
 
-**In this project:** planned for repeat/near-duplicate extraction calls
-and/or repeat queries. `cache/cache.py` is currently a placeholder — not
-yet designed.
 
 ### Batching
 Running inputs through a model one at a time usually leaves the underlying

@@ -1,6 +1,6 @@
 from pathlib import Path
-import json
 
+from src.cache import cache
 from src.chunking.chunk_corpus import read_text
 from src.extraction import extractor
 from src.graph import traversal
@@ -9,6 +9,7 @@ from src.retrieval import lexical
 DEFAULT_K = 5
 DEFAULT_HOPS = 2
 DEFAULT_MAX_NEW_TOKENS = 512
+DEFAULT_CACHE_DIR = Path("data/cache")
 
 PROMPT_TEMPLATE= """\
 Answer the question using only the context below. if the context\
@@ -36,6 +37,7 @@ def answer_query(
     k: int = DEFAULT_K,
     hops: int = DEFAULT_HOPS,
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
+    cache_dir: Path = DEFAULT_CACHE_DIR,
 ) -> dict:
     """
         retrieve -> graph expand -> prompt -> answer
@@ -49,27 +51,32 @@ def answer_query(
             k: bm25 top-k
             hops: graph expansion depth
             max_new_tokens
-        
+            cache_dir: exact-match query cache location
+
         return:
             {"answer": str, "sources": [(file_path, first, last),...]}
-            sources includes both the BM25 seeds and graph-expanded chunks 
+            sources includes both the BM25 seeds and graph-expanded chunks
+
+        an identical (query, k, hops, max_new_tokens) call is served from
+        `cache_dir` without re-running retrieval/graph-expand/generation -
+        the model still has to be loaded by the caller either way, this
+        only skips the actual per-query work.
     """
-    print("Debug query=", repr(query), "k=", k, "index.doc_coun=", index.doc_count)
-    
+    query_cache = cache.load_cache(cache_dir)
+    cached = cache.get_cached_result(query_cache, query, k, hops, max_new_tokens)
+    if cached is not None:
+        return cached
+
     ranked = lexical.search(index, query, k)
-    print("Debug ranked=", json.dumps(ranked, indent=2))
-    
     seed_chunks = [
         (index.chunks[cid][0], index.chunks[cid][1], index.chunks[cid][2])
         for cid, _ in ranked
     ]
-    print("Debug seed_chunks=", json.dumps(seed_chunks, indent=2))
 
     expanded = traversal.expand_chunks(driver, seed_chunks, hops=hops)
     expanded_chunks = [(chunk["file_path"], chunk["first"], chunk["last"]) for chunk in expanded]
 
     all_chunks = seed_chunks + expanded_chunks
-    print("Debug all chunks=", json.dumps(all_chunks, indent=2))
 
     context = "\n---\n".join(
         _reslice(data_dir, file_path, first, last)
@@ -79,4 +86,7 @@ def answer_query(
     prompt = PROMPT_TEMPLATE.format(context=context, query=query)
     answer = model(prompt, max_new_tokens=max_new_tokens)
 
-    return {"answer": answer, "sources": all_chunks}
+    result = {"answer": answer, "sources": all_chunks}
+    cache.store_result(query_cache, query, k, hops, max_new_tokens, result)
+    cache.save_cache(query_cache, cache_dir)
+    return result

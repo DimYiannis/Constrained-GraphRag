@@ -57,6 +57,7 @@ class RagCLI:
         k: int = 5,
         data_directory: str = "data/raw",
         processed_directory: str = "data/processed",
+        cache_directory: str = "data/cache",
         hops: int = 2,
         max_new_tokens: int = 512,
     ) -> None:
@@ -74,7 +75,8 @@ class RagCLI:
 
         result = query_pipeline.answer_query(
             str(query), index, driver, Path(data_directory), model,
-            k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens)
+            k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens),
+            cache_dir=Path(cache_directory),
         )
 
         print("Sources:")
