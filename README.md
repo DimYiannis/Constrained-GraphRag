@@ -145,11 +145,11 @@ constrained-graphrag/
 │   │   ├── neo4j_client.py       # connection handling
 │   │   ├── loader.py             # writes one chunk's triples into Neo4j
 │   │   └── traversal.py          # graph expansion outward from BM25's results
-│   ├── pipeline/           
-│   │   ├── index_pipeline.py
-│   │   └── query_pipeline.py
-│   └── cache/                   
-│       └── cache.py
+│   ├── pipeline/
+│   │   ├── index_pipeline.py     # offline: corpus -> chunk -> extract -> load graph
+│   │   └── query_pipeline.py     # runtime: query -> retrieve -> graph expand -> answer
+│   └── cache/
+│       └── cache.py              # persistent exact-match cache for query answers
 ├── data/                          
 ├── pyproject.toml
 ├── uv.lock
@@ -273,14 +273,32 @@ Takes BM25's top-k results as seed chunks, walks 1-2 hops outward through the gr
 </details>
 
 </details>
+<details>
+<summary>📁 <strong>src/pipeline/</strong></summary>
 
 <details>
-<summary>📁 <strong>src/pipeline/</strong> and <strong>src/cache/</strong></summary>
+<summary>📄 <code>index_pipeline.py</code></summary>
+
+Offline orchestration: walks a corpus, chunks every file, runs each chunk through `extractor.py`, loads the result into Neo4j via `loader.py`. `limit` defaults to a small number rather than the full ~28,246-chunk corpus — extraction runs ~15-30s/chunk, so a full run is measured in days, not something to kick off by default.
+
+</details>
 
 <details>
-<summary>📄 <code>index_pipeline.py</code>, <code>query_pipeline.py</code>, <code>cache.py</code></summary>
+<summary>📄 <code>query_pipeline.py</code></summary>
 
-Empty placeholder files, not built yet. `pipeline/` will orchestrate everything above into an actual offline indexing run and a runtime query flow; `cache/` will hold a reused caching layer.
+Runtime orchestration: BM25 search for seed chunks → `traversal.py`'s graph expansion outward from them → build the final prompt from both → generate an answer. Checks `cache/cache.py`'s persisted cache first and returns early on a hit, skipping retrieval/expansion/generation entirely; writes the result back to the cache on a miss.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>src/cache/</strong></summary>
+
+<details>
+<summary>📄 <code>cache.py</code></summary>
+
+A persistent, disk-backed exact-match cache for keyed on `(query, k, hops, max_new_tokens)`. Disk-backed deliberately — each CLI call (`python -m src answer`) is its own process, so an in-memory-only cache would not survive to see a repeat query. No semantic matching (a different query text is always a miss, even a near-paraphrase) — that needs an embedding model.
 
 </details>
 
@@ -342,6 +360,8 @@ Each type earns its place by doing one specific, well-defined job — except one
 - **Schema-level fix:** relationship `subject`/`target` values kept showing up as entire import statements or sentences instead of clean identifiers — structurally valid per the schema at the time (a plain unconstrained `str`), but semantically useless. Prompt wording alone only partially fixed this. The real fix was adding a regex constraint (`Field(pattern=r"^[A-Za-z_][A-Za-z0-9_.]*$")`) directly to `schema.py`'s `name`/`subject`/`target` fields — Outlines compiles that pattern into the same FSM that already enforces `node_type`/`relation`, so a full import statement became *structurally unreachable* to generate, not just discouraged by prompt text.
 
 **One edge case the regex fix doesn't close:** it constrains *shape*, not *truth*. The model can still fabricate a string that looks identifier-shaped but isn't a real symbol anywhere in the source — observed case: `from vllm.utils import LRUCache` got mashed into `"from_vllm.utils.lrucache"` as a relationship target, which satisfies the regex (only letters/underscores/dots) while being a fabrication. A regex can only ever constrain what a string *looks like*; verifying it's a *real* symbol from the actual chunk would need a fundamentally different mechanism.
+
+**The query cache only ever matches identically.** `cache/cache.py` keys on the literal `(query, k, hops, max_new_tokens)` tuple — `"enable lora"` and `"Enable LoRA"` are two totally different cache entries, even though a person reads them as the same question. A cache that catches near-paraphrases needs a **semantic cache** instead — embed the query, compare similarity against past queries.
 
 ---
 

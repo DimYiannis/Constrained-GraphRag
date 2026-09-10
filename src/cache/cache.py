@@ -38,15 +38,3 @@ def get_cached_result(cache: dict, query: str, k: int, hops: int, max_new_tokens
 
 def store_result(cache: dict, query: str, k: int, hops: int, max_new_tokens: int, result:dict) -> None:
     cache[_key(query, k, hops, max_new_tokens)] = result
-
-if __name__ == "__main__":
-    d = Path("data/cache")
-    c = load_cache(d)
-    key = _key("hello there bro", 2, 2, 500)
-    c[key] = {"answer": "hi", "sources": []}
-    save_cache(c, d)
-    print(load_cache(d))
-    print()
-
-    store_result(c, "heelllo", 2, 2, 300, {"answer": "hi", "sources": []})
-    print(get_cached_result(c, "heelllo", 2, 2, 300))
