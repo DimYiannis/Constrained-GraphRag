@@ -33,6 +33,11 @@ def save_cache(cache: dict, cache_dir: Path) -> None:
     with open(target, "wb") as handle:
         pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+def get_cached_result(cache: dict, query: str, k: int, hops: int, max_new_tokens: int) -> dict | None:
+    return cache.get(_key(query, k, hops, max_new_tokens))
+
+def store_result(cache: dict, query: str, k: int, hops: int, max_new_tokens: int, result:dict) -> None:
+    cache[_key(query, k, hops, max_new_tokens)] = result
 
 if __name__ == "__main__":
     d = Path("data/cache")
@@ -41,3 +46,7 @@ if __name__ == "__main__":
     c[key] = {"answer": "hi", "sources": []}
     save_cache(c, d)
     print(load_cache(d))
+    print()
+
+    store_result(c, "heelllo", 2, 2, 300, {"answer": "hi", "sources": []})
+    print(get_cached_result(c, "heelllo", 2, 2, 300))
