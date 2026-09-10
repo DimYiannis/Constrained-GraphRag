@@ -27,5 +27,17 @@ def load_cache(cache_dir: Path) -> dict:
     except (pickle.UnpicklingError, EOFError, OSError):
         return {}
 
+def save_cache(cache: dict, cache_dir: Path) -> None:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    target = cache_dir / CACHE_FILENAME
+    with open(target, "wb") as handle:
+        pickle.dump(cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 if __name__ == "__main__":
-    print(_key("hello there bro", 2, 2, 500))
+    d = Path("data/cache")
+    c = load_cache(d)
+    key = _key("hello there bro", 2, 2, 500)
+    c[key] = {"answer": "hi", "sources": []}
+    save_cache(c, d)
+    print(load_cache(d))
