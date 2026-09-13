@@ -1,7 +1,7 @@
 from src.extraction.schema import ExtractionResult
 from src.chunking.spans import Chunk
 from src.graph.neo4j_client import run_query
-
+import re
 
 FALLBACK_NODE_TYPE = "Entity"
 
@@ -59,7 +59,7 @@ def load_chunk(
         run_query(
             driver,
             f"MERGE (entity:{entity.node_type.value} {{name_normalized: $name_normalized}}) "
-            "ON CREATE SET entity.name = $name"
+            "ON CREATE SET entity.name = $name "
             "WITH entity "
             "MATCH (chunk:Chunk {file_path: $file_path, first: $first, last: $last}) "
             "MERGE (entity)-[:MENTIONED_IN]->(chunk)",
@@ -75,8 +75,8 @@ def load_chunk(
     # node-type lookup to make sure both entity nodes exist
     # connect those two nodes with the right relation type (schema)
     for relationship in result.relationships:
-        subject_type = entity_types.get(relationship.subject, FALLBACK_NODE_TYPE)
-        target_type = entity_types.get(relationship.target, FALLBACK_NODE_TYPE)
+        subject_type = entity_types.get(_normalize(relationship.subject), FALLBACK_NODE_TYPE)
+        target_type = entity_types.get(_normalize(relationship.target), FALLBACK_NODE_TYPE)
         run_query(
             driver,
             f"MERGE (subject:{subject_type} {{name_normalized: $subject_normalized}}) "
