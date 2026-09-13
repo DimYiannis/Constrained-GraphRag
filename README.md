@@ -350,6 +350,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 **Our problem, concretely:** `graph/loader.py` currently merges entities by exact string match — `MERGE` on `(label, name)`. Two chunks both extracting an entity named `"TokenizerGroup"` correctly collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it. That's the mechanism that makes cross-chunk graph connections happen at all. But exact match does nothing for `"Acme Corp"` vs `"Acme Corporation"` — two mentions of the same real entity, spelled differently, silently become two separate nodes. No error, no warning — just quietly fragmented graph structure, each half missing edges the other has.
 
+[Aakash's writeup on entity resolution](https://www.aakashx.com/blog/knowledge-architecture-ontologies-entity-resolution-graphs/#5-18-graphrag) deterministic matching (exact ID/key equality) vs. probabilistic/fuzzy matching (similarity + confidence scoring) -> "probabilistic inference should not silently become authoritative master data." Avoid automatical merge of probable similar entities (uncertain inference). If merge is wrong the mistake is silent and harder to catch than a duplicate.
 
 ---
 
@@ -364,7 +365,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 **The query cache only ever matches identically.** `cache/cache.py` keys on the literal `(query, k, hops, max_new_tokens)` tuple — `"enable lora"` and `"Enable LoRA"` are two totally different cache entries, even though a person reads them as the same question. A cache that catches near-paraphrases needs a **semantic cache** instead — embed the query, compare similarity against past queries.
 
----
+   ---
 
 ## 📎 Resources
 
@@ -385,3 +386,4 @@ Each type earns its place by doing one specific, well-defined job — except one
 - [Loading models from HF](https://huggingface.co/docs/transformers/en/models?utm_source=chatgpt.com)
 - [Tokenizer and Auto classes from HF](https://huggingface.co/docs/transformers/model_doc/auto?utm_source=chatgpt.com)
 - [Outlines Generator](https://dottxt-ai.github.io/outlines/main/features/core/generator/?utm_source=chatgpt.com)
+- [Knowledge Architecture: Ontologies, Entity Resolution, Graphs](https://www.aakashx.com/blog/knowledge-architecture-ontologies-entity-resolution-graphs/#5-18-graphrag)  frames GraphRAG as an architectural pattern worth reaching for only when relationships materially affect the answer ("the graph provides scope, vectors provide relevance").
