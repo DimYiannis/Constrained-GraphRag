@@ -13,12 +13,12 @@ from pydantic import BaseModel, Field
 
 
 class NodeType(str, Enum):
-    FUNCTION = "Function"
-    CLASS = "Class"
-    MODULE = "Module"
-    CONCEPT = "Concept"
-    ENTITY = "Entity"
-    CHUNK = "Chunk"
+    FUNCTION = "Function" # unit py source
+    CLASS = "Class" # unit of py source
+    MODULE = "Module" # unit of py source
+    CONCEPT = "Concept" # md/text files
+    ENTITY = "Entity" # generall fallback
+    CHUNK = "Chunk" # structural, created in chunking phase
 
 
 class RelationType(str, Enum):
