@@ -12,6 +12,7 @@ dependencies = [
     "torch>=2.13.0",
     "tqdm>=4.68.4",
     "transformers>=5.16.1",
+    "sentence-transformers>=5.7.0",
 ]
 
 [dependency-groups]
