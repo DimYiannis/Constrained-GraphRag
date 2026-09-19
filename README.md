@@ -387,3 +387,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 - [Tokenizer and Auto classes from HF](https://huggingface.co/docs/transformers/model_doc/auto?utm_source=chatgpt.com)
 - [Outlines Generator](https://dottxt-ai.github.io/outlines/main/features/core/generator/?utm_source=chatgpt.com)
 - [Knowledge Architecture: Ontologies, Entity Resolution, Graphs](https://www.aakashx.com/blog/knowledge-architecture-ontologies-entity-resolution-graphs/#5-18-graphrag)  frames GraphRAG as an architectural pattern worth reaching for only when relationships materially affect the answer ("the graph provides scope, vectors provide relevance").
+- [SentenceTransformers — main docs](https://sbert.net/) — the library itself: quickstart, `SentenceTransformer(model_name)`, `.encode()`.
+- [Pretrained Models](https://sbert.net/docs/sentence_transformer/pretrained_models.html) — model comparison table, includes `all-MiniLM-L6-v2` (the one used in `retrieval/semantic/embeddings.py` — fast, 384-dim, 256-token cap).
+- [Semantic Search](https://sbert.net/examples/sentence_transformer/applications/semantic-search/README.html) — the actual use case here: embed a corpus, embed a query, rank by cosine similarity — same pattern `semantic_top_k()` implements.
+- [`.encode()` API reference](https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode) — the exact params in use (`batch_size`, `convert_to_numpy`, `normalize_embeddings`, `show_progress_bar`).

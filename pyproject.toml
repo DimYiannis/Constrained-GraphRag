@@ -13,6 +13,7 @@ dependencies = [
     "tqdm>=4.68.4",
     "transformers>=5.16.1",
     "sentence-transformers>=5.7.0",
+    "rich>=15.0.0",
 ]
 
 [dependency-groups]
