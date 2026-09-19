@@ -57,3 +57,16 @@ def build_embeddings(
 
         return l2-normalised matrix
     """
+    if model is None:
+        load_model()
+    texts = _get_chunks(index, show_progress=show_progress)
+    vectors = model.encode(
+        texts,
+        batch_size=batch_size,
+        show_progress_bar=show_progress,
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+    return np.asarray(vectors, dtype=np.float32)
+
+    
