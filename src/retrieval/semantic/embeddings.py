@@ -10,13 +10,13 @@ from typing import cast
 
 from tqdm import tqdm
 import numpy as np
-from sentence_transformers import SentnenceTransformer
+from sentence_transformers import SentenceTransformer
 
 from src.retrieval.lexical import Index
-from src.chunnking.chunk_corpus import read_text
+from src.chunking.chunk_corpus import read_text
 
 MODEL_NAME = "all-MiniLM-L6-v2"
-EMBEDDINGS_FILENAME = "embeddings.py"
+EMBEDDINGS_FILENAME = "embeddings.npy"
 
 def load_model(model: str = MODEL_NAME) -> SentenceTransformer:
     model = SentenceTransformer(model, device="cpu")
@@ -51,7 +51,7 @@ def _get_chunks(index: Index, data_dir: Path, show_progress: bool = True) -> lis
 def build_embeddings(
     index: Index,
     data_dir: Path,
-    model: SentnenceTransformer,
+    model: SentenceTransformer | None = None,
     batch_size: int = 64,
     show_progress: bool = True
 ) -> np.ndarray:
@@ -61,7 +61,7 @@ def build_embeddings(
         return l2-normalised matrix, position = chunk_id
     """
     if model is None:
-        load_model()
+        model = load_model()
     texts = _get_chunks(index, data_dir, show_progress=show_progress)
     vectors = model.encode(
         texts,
@@ -79,12 +79,12 @@ def save_embeddings(matrix: np.ndarray, save_dir: Path) -> Path:
         return path of the written .npy file
     """
     save_dir.mkdir(parents=True, exist_ok=True)
-    target = save_dir / EMBEDDING_FILENAME
+    target = save_dir / EMBEDDINGS_FILENAME
     np.save(target, matrix)
     return target
 
 def load_embeddings(save_dir: Path) -> np.ndarray:
-    target = save_dir / EMBEDDING_FILENAME
+    target = save_dir / EMBEDDINGS_FILENAME
     if not target.is_file():
         raise FileNotFoundError(f"No embeddings at {target}")
     try:
@@ -92,3 +92,34 @@ def load_embeddings(save_dir: Path) -> np.ndarray:
     except (OSError, ValueError) as exc:
         raise ValueError(f"corrupt embeddings file {target}: {exc}") from exc
 
+def semantic_top_k(
+    embeddings: np.ndarray,
+    model: SentenceTransformer,
+    query: str,
+    k: int,
+) -> list[tuple[int, float]]:
+    """
+        return the k best chunks for a query by cosine similarity
+
+        args:
+            embeddings: l2 normalised matrix
+            model
+            query
+            k: num of results wanted
+
+        return:
+            (chunk_id, score) pairs, score descending, ties break on
+            lower chunk_id
+    """
+    if k <= 0 or embeddings.shape[0] == 0:
+        return []
+    query_vector = model.encode(
+        [query], convert_to_numpy=True, normalize_embeddings=True,
+        show_progress_bar=False,
+    )[0].astype(np.float32) # single, L2-normalized, float32, 384-dim vector
+    sims = embeddings @ query_vector # cosine similarity colapsed to a dot product
+    wanted = min(k, sims.shape[0])
+    top_idx = np.argpartition(-sims, wanted - 1)[:wanted]
+    ranked = [(int(i), float(sims[i])) for i in top_idx]
+    ranked.sort(key=lambda item: (-item[1], item[0]))
+    return ranked
