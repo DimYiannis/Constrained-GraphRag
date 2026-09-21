@@ -58,6 +58,8 @@ flowchart LR
     end
 
     bm25["BM25 Index<br/>(tokenizer + bm25s)"]
+    semb["Sentence-Transformers<br/>(embeddings)"]
+    embmatrix[("Embeddings Matrix<br/>(.npy)")]
     qwen["Qwen3-0.6B + Outlines<br/>(constrained extraction)"]
     neodb[("Neo4j<br/>Chunk nodes +<br/>entities + relationships")]
 
@@ -65,32 +67,49 @@ flowchart LR
     corpus --> plain
     ast --> bm25
     plain --> bm25
+    ast --> semb
+    plain --> semb
+    semb --> embmatrix
     ast --> qwen
     plain --> qwen
     qwen --> neodb
 
+    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
+    class semb,embmatrix planned;
 ```
 
 **Online — answering a query** (`pipeline/query_pipeline.py`):
 
 ```mermaid
-flowchart TB
+flowchart LR
     user(["User"])
-    app["Query Pipeline"]
-    store[("BM25 Index<br/>+ Neo4j Graph")]
+    lex[("BM25 Index")]
+    sem[("Embeddings<br/>Matrix")]
+    fusion["RRF Fusion"]
+    seeds["Seed Chunks"]
+    neodb[("Neo4j<br/>traverse 1-2 hops")]
+    merged["Seed + Expanded<br/>Chunks"]
     llm["LLM"]
 
-    user -- "Question" --> app
-    app -- "Complete Response" --> user
+    user -- "Question" --> lex
+    user -- "Question" --> sem
+    lex --> fusion
+    sem --> fusion
+    fusion --> seeds
 
-    app -- "BM25 search +<br/>graph expansion" --> store
-    store -- "Chunks +<br/>related entities" --> app
+    seeds -- "1. find seeds' entities<br/>2. expand outward" --> neodb
+    neodb -- "3. new chunks" --> merged
+    seeds --> merged
 
-    app -- "Prompt<br/>(Question + Context)" --> llm
-    llm -- "Complete Response" --> app
+    merged -- "Prompt" --> llm
+    llm -- "Answer" --> user
 
-
+    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
+    class sem,fusion planned;
 ```
+
+🟢 solid = built and tested · ⬜ dashed = designed, not yet built (semantic embeddings, RRF fusion)
+
 ---
 
 ## 🔄 Workflow
@@ -117,16 +136,18 @@ Two earlier projects each contributed one core technique reused here, adapted ra
 ```
 constrained-graphrag/
 ├── src/
-│   ├── __main__.py               # Fire CLI — index, search
+│   ├── __main__.py               # Fire CLI — index, search, answer
 │   ├── chunking/
 │   │   ├── chunk_corpus.py       # corpus walking, file dispatch by extension
 │   │   ├── ast_chunker.py        # AST-based chunking for .py (function/class-level)
 │   │   ├── plain_chunker.py      # header-based chunking for markdown, line fallback
 │   │   └── spans.py              # shared span-splitting + Chunk dataclass
 │   ├── retrieval/
-│   │   └── lexical/
-│   │       ├── tokenizer.py      # identifier-aware tokenizer (subtokens, stopwords)
-│   │       └── indexer.py        # Index build/save/load, top-k search (bm25s-backed)
+│   │   ├── lexical/
+│   │   │   ├── tokenizer.py      # identifier-aware tokenizer (subtokens, stopwords)
+│   │   │   └── indexer.py        # Index build/save/load, top-k search (bm25s-backed)
+│   │   └── semantic/
+│   │       └── embeddings.py     # sentence-transformers embeddings, cosine top-k (in progress)
 │   ├── extraction/
 │   │   ├── schema.py             # node/relationship types, the Outlines grammar source
 │   │   ├── extractor.py          # runs Qwen3-0.6B + Outlines, one chunk in, triples out
@@ -135,14 +156,34 @@ constrained-graphrag/
 │   │       └── text_prompt.py    # extraction prompt for text/config chunks
 │   ├── graph/
 │   │   ├── neo4j_client.py       # connection handling
-│   │   ├── loader.py             # writes one chunk's triples into Neo4j
-│   │   └── traversal.py          # graph expansion outward from BM25's results
+│   │   ├── loader.py             # writes one chunk's triples into Neo4j, entity-resolution merge
+│   │   └── traversal.py          # graph expansion outward from seed chunks
 │   ├── pipeline/
 │   │   ├── index_pipeline.py     # offline: corpus -> chunk -> extract -> load graph
 │   │   └── query_pipeline.py     # runtime: query -> retrieve -> graph expand -> answer
 │   └── cache/
 │       └── cache.py              # persistent exact-match cache for query answers
-├── data/                          
+├── evaluation/
+│   ├── evaluate.py               # recall@k: lexical / lexical+graph (+ future arms)
+│   └── test_queries.json         # 200 ground-truth questions, reused from a sibling project
+├── tests/
+│   ├── test_extraction_quality.py  # pytest: identifier regex holds against live model output
+│   ├── test_cache.py               # pytest: cache round-trips correctly
+│   ├── check_chunks.py             # standalone: inspect chunking output
+│   ├── check_extraction.py         # standalone: inspect one extraction call
+│   ├── check_pipeline.py           # standalone: inspect the query pipeline
+│   ├── check_er.py                 # standalone: verify entity-resolution merging (scoped, non-destructive)
+│   └── load_eval_subset.py         # one-off: extract+load the eval ground-truth chunk subset into Neo4j
+├── data/
+│   ├── raw/                      # corpus (tracked; everything else under data/ is gitignored)
+│   ├── processed/                # persisted BM25 index
+│   └── cache/                    # persisted query cache
+├── RUNNING.md                          # full setup + command reference
+├── docker-setup.md                     # Neo4j via Docker, setup + troubleshooting
+├── Theory.md                           # concepts + architecture, general-to-specific
+├── progress.md                         # build tracker + decisions log
+├── CLAUDE.md                           # project conventions for AI-assisted development
+├── colab-notebook-agent-instructions.md  # spec for a Colab demo notebook (not yet built)
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
@@ -215,6 +256,18 @@ Builds/saves/loads the BM25 index (backed by `bm25s`), and `search()` — turns 
 </details>
 
 <details>
+<summary>📁 <strong>src/retrieval/semantic/</strong></summary>
+
+<details>
+<summary>📄 <code>embeddings.py</code></summary>
+
+Dense retrieval, in progress: embeds every chunk with `sentence-transformers` (`all-MiniLM-L6-v2`) into an L2-normalized matrix, persisted alongside the BM25 index. `semantic_top_k()` ranks by cosine similarity — a plain dot product, since normalized vectors make that equivalent to cosine similarity without recomputing norms per query.
+
+</details>
+
+</details>
+
+<details>
 <summary>📁 <strong>src/extraction/</strong></summary>
 
 <details>
@@ -253,14 +306,14 @@ Connection handling: builds a driver from `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWO
 <details>
 <summary>📄 <code>loader.py</code></summary>
 
-Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity (merged by name+type, which is what lets the same entity mentioned in different chunks become one shared node), the `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges between entities.
+Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity (merged by *normalized* name+type — lowercased, punctuation/whitespace stripped — so `"TokenizerGroup"` and `"tokenizer_group"` collapse onto one shared node instead of silently fragmenting), the `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges between entities. See [Entity Resolution](#-entity-resolution).
 
 </details>
 
 <details>
 <summary>📄 <code>traversal.py</code></summary>
 
-Takes BM25's top-k results as seed chunks, walks 1-2 hops outward through the graph from the entities mentioned in them, returns the *other* chunks reachable that way — chunks BM25 never lexically matched at all.
+Takes a retriever's top-k results as seed chunks (lexical, semantic, or hybrid — this function doesn't care which), walks 1-2 hops outward through the graph from the entities mentioned in them, returns the *other* chunks reachable that way — chunks the original retrieval pass never found at all.
 
 </details>
 
@@ -297,12 +350,78 @@ A persistent, disk-backed exact-match cache for keyed on `(query, k, hops, max_n
 </details>
 
 <details>
+<summary>📁 <strong>evaluation/</strong></summary>
+
+<details>
+<summary>📄 <code>evaluate.py</code></summary>
+
+Recall@k over `test_queries.json`. A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span, not just graze it. Reports `lexical` and `lexical+graph` (and per-split docs/code numbers) today — structured to add `semantic`/`hybrid` arms alongside, not replace them, once those retrievers exist.
+
+</details>
+
+<details>
+<summary>📄 <code>test_queries.json</code></summary>
+
+200 questions with real answers and ground-truth `(file_path, first, last)` source spans — reused from a sibling project's dataset built against the same vLLM 0.10.1 corpus, rather than hand-authored from scratch. Every span was spot-checked against this project's own corpus copy before being trusted as ground truth.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>tests/</strong></summary>
+
+<details>
+<summary>📄 <code>test_extraction_quality.py</code> / <code>test_cache.py</code></summary>
+
+Real pytest tests. The first asserts the identifier regex (`schema.py`) holds against *live* model output, not just unit-tested Pydantic validation; the second covers `cache.py`'s round-trip (save/load, hit/miss, corrupt-file recovery).
+
+</details>
+
+<details>
+<summary>📄 <code>check_chunks.py</code> / <code>check_extraction.py</code> / <code>check_pipeline.py</code></summary>
+
+Standalone debug scripts (not pytest) for eyeballing one stage in isolation — chunking output, a single extraction call, or the query pipeline end-to-end — against real data, without running the whole CLI.
+
+</details>
+
+<details>
+<summary>📄 <code>check_er.py</code></summary>
+
+Verifies entity-resolution normalization actually merges cosmetic name variants into one graph node. Deliberately scoped and non-destructive: test data carries a marker prefix guaranteed never to collide with real corpus data, and cleanup only ever deletes nodes matching that prefix — never a blanket wipe (a blanket `MATCH (n) DETACH DELETE n` here once cost hours of re-extraction to recover from).
+
+</details>
+
+<details>
+<summary>📄 <code>load_eval_subset.py</code></summary>
+
+One-off, resumable script: extracts + loads into Neo4j only the chunks that overlap a `test_queries.json` ground-truth span (a few hundred, not the full ~28,246-chunk corpus) — enough to run a real `lexical+graph` evaluation without days of extraction. Skips chunks already present on re-run.
+
+</details>
+
+</details>
+
+<details>
 <summary>📁 <strong>data/</strong></summary>
 
 <details>
 <summary>📄 <code>raw/&lt;corpus-name&gt;/</code></summary>
 
 Holds the corpus. Gitignored — nothing under it is committed, and no path is hard-coded anywhere in the project; every input/output location is a CLI argument.
+
+</details>
+
+<details>
+<summary>📄 <code>processed/</code></summary>
+
+The persisted BM25 index (`bm25s`-backed) — built once by `index`, loaded by every `search`/`answer` call after.
+
+</details>
+
+<details>
+<summary>📄 <code>cache/</code></summary>
+
+`cache.py`'s persisted query cache (see `src/cache/`) — survives across CLI invocations since each one is its own process.
 
 </details>
 
@@ -356,11 +475,10 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 ## 📊 Results
 
-Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span, not just graze it — a stricter bar than naive any-overlap counting.
+Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span.
 
-The graph was extracted+loaded only over the 298 chunks that ground-truth answers actually live in (full-corpus extraction is weeks of compute at this model's per-chunk cost — see [Challenges Faced](#-challenges-faced)); lexical search still runs over the full 28,246-chunk corpus.
 
-| k | lexical | lexical+graph |  |
+| k | lexical | lexical+graph | Δ |
 |---|---------|---------------|---|
 | 3 | 0.668 | 0.714 | +0.046 |
 | 5 | 0.709 | 0.749 | +0.040 |
@@ -369,6 +487,14 @@ The graph was extracted+loaded only over the 298 chunks that ground-truth answer
 Graph expansion adds a real, consistent lift at every k — not just noise. It helps docs more than code (denser `REFERENCES` cross-links between prose and the function/class it describes than code chunks tend to have between each other).
 
 *Semantic and hybrid arms coming next — this table gets extended once those retrievers exist, not before.*
+
+---
+
+## ⚠️ Limitations
+
+- **The graph only covers ~300 of the corpus's 28,246 chunks.** Extraction runs one chunk at a time through Qwen3-0.6B (~60-90s/chunk observed).
+A full-corpus run is weeks of compute, not something to do by default. 
+The graph was instead ingested only over the chunks that `evaluation/test_queries.json`'s ground-truth answers actually live in, enough to run a real evaluation but not a full production-scale graph. Lexical search, by contrast, runs over the entire corpus — see [Results](#-results) for how that scoping affects the comparison.
 
 ---
 
