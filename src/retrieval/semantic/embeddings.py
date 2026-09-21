@@ -119,7 +119,7 @@ def semantic_top_k(
     )[0].astype(np.float32) # single, L2-normalized, float32, 384-dim vector
     sims = embeddings @ query_vector # cosine similarity colapsed to a dot product
     wanted = min(k, sims.shape[0])
-    top_idx = np.argpartition(-sims, wanted - 1)[:wanted]
-    ranked = [(int(i), float(sims[i])) for i in top_idx]
-    ranked.sort(key=lambda item: (-item[1], item[0]))
+    top_idx = np.argpartition(-sims, wanted - 1)[:wanted] # np.argpartition is a partial sort
+    ranked = [(int(i), float(sims[i])) for i in top_idx] # turn raw indices into (chunk_id, score) pairs
+    ranked.sort(key=lambda item: (-item[1], item[0])) # sort small wanted-sized list
     return ranked
