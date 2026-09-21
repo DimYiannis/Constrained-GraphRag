@@ -4,6 +4,9 @@ from pathlib import Path
 import fire
 from dotenv import load_dotenv
 
+from rich.console import Console
+from rich.table import Table
+
 load_dotenv()
 
 class RagCLI:
@@ -79,13 +82,19 @@ class RagCLI:
             cache_dir=Path(cache_directory),
         )
 
-        print("Sources:")
-        for file_path, first, last, in result["sources"]:
-            print(f"  {file_path} [{first}:{last}]")
-        print()
-        print("Answer:")
-        print(result["answer"])
+        console = Console()
 
+        table = Table(title="Sources")
+        table.add_column("Origin", style="cyan")
+        table.add_column("File", style="white")
+        table.add_column("Span", style="dim")
+        for file_path, first, last, origin in result["sources"]:
+            table.add_row(origin, file_path, f"[{first}:{last}]")
+        console.print(table)
+
+        console.print()
+        console.print("[bold]Answer:[/bold]")
+        console.print(result["answer"])
         driver.close()
 
 
