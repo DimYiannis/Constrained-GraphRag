@@ -59,6 +59,6 @@ def hybrid_top_k(
         return:
             (chunk_id, rrf_score)
     """
-    lexical_rank = lexical.search(index, query, k)
-    semantic_rank = semantic_top_k(embeddings, model, query, k)
+    lexical_rank = lexical.search(index, query, candidates)
+    semantic_rank = semantic_top_k(embeddings, model, query, candidates)
     return fuse(lexical_rank, semantic_rank, k, c=c)
