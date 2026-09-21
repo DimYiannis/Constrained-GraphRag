@@ -13,7 +13,7 @@ def fuse(
     lexical_ranked: list[tuple[int, float]],
     semantic_ranked: list[tuple[int, float]],
     k: int,
-    c: int = RFF_C
+    c: int = RRF_C
 ) -> list[tuple[int, float]]:
     """
         Reciprocal Rank Fusion of a lexical and a semantic ranking.
@@ -27,11 +27,38 @@ def fuse(
     if k <= 0:
         return []
     rrf_scores: dict[int, float] = {}
-    for ranked in (lexical_ranked, emantic_ranked):
+    for ranked in (lexical_ranked, semantic_ranked):
         for rank, (chunk_id, _) in enumerate(ranked, start=1):
             rrf_scores[chunk_id] = rrf_scores.get(chunk_id, 0.0) + 1.0 / (c + rank)
     fused = sorted(rrf_scores.items(), key=lambda item: (-item[1], item[0]))
     return fused[:k]
 
 
+def hybrid_top_k(
+    index: lexical.Index,
+    embeddings,
+    model,
+    query,
+    k,
+    c: int = RRF_C,
+    candidates: int = FUSION_CANDIDATES
+) -> list[tuple[int, float]]:
+    """
+        lexical + semantic search fused by RRF
 
+        args:
+            index: bm25 index
+            embeddings: l2-normalized embedding matrix
+            model: loaded SentenceTransformer
+            query
+            k: num of results
+            candidates: how many results to pull from
+                each retrieval
+            c: RRF constant
+        
+        return:
+            (chunk_id, rrf_score)
+    """
+    lexical_rank = lexical.search(index, query, k)
+    semantic_rank = semantic_top_k(embeddings, model, query, k)
+    return fuse(lexical_rank, semantic_rank, k, c=c)
