@@ -2784,5 +2784,19 @@
       }
     ],
     "difficulty": "synthetic"
+  },
+  {
+    "question_id": "cabd7283-95cb-4b6c-a5d1-bd7e81caed48",
+    "split": "docs",
+    "question": "What vLLM metric tracks the number of requests currently being processed in model execution batches?",
+    "answer": "The `vllm:num_requests_running` metric tracks the number of requests currently in model execution batches. This is a gauge-type metric that shows real-time request processing status in vLLM's metrics system.",
+    "sources": [
+      {
+        "file_path": "docs/design/metrics.md",
+        "first_character_index": 13441,
+        "last_character_index": 14362
+      }
+    ],
+    "difficulty": "synthetic"
   }
 ]

@@ -354,6 +354,24 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 ---
 
+## 📊 Results
+
+Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span, not just graze it — a stricter bar than naive any-overlap counting.
+
+The graph was extracted+loaded only over the 298 chunks that ground-truth answers actually live in (full-corpus extraction is weeks of compute at this model's per-chunk cost — see [Challenges Faced](#-challenges-faced)); lexical search still runs over the full 28,246-chunk corpus.
+
+| k | lexical | lexical+graph |  |
+|---|---------|---------------|---|
+| 3 | 0.668 | 0.714 | +0.046 |
+| 5 | 0.709 | 0.749 | +0.040 |
+| 10 | 0.789 | 0.819 | +0.030 |
+
+Graph expansion adds a real, consistent lift at every k — not just noise. It helps docs more than code (denser `REFERENCES` cross-links between prose and the function/class it describes than code chunks tend to have between each other).
+
+*Semantic and hybrid arms coming next — this table gets extended once those retrievers exist, not before.*
+
+---
+
 ## 🧗 Challenges Faced
 
 **A 0.6B model doesn't automatically produce clean, real identifiers just because the JSON around them is valid.** Early testing surfaced two distinct failure modes, fixed at two different layers:
