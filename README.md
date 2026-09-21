@@ -133,62 +133,6 @@ Two earlier projects each contributed one core technique reused here, adapted ra
 
 ## 🗂 Project Structure
 
-```
-constrained-graphrag/
-├── src/
-│   ├── __main__.py               # Fire CLI — index, search, answer
-│   ├── chunking/
-│   │   ├── chunk_corpus.py       # corpus walking, file dispatch by extension
-│   │   ├── ast_chunker.py        # AST-based chunking for .py (function/class-level)
-│   │   ├── plain_chunker.py      # header-based chunking for markdown, line fallback
-│   │   └── spans.py              # shared span-splitting + Chunk dataclass
-│   ├── retrieval/
-│   │   ├── lexical/
-│   │   │   ├── tokenizer.py      # identifier-aware tokenizer (subtokens, stopwords)
-│   │   │   └── indexer.py        # Index build/save/load, top-k search (bm25s-backed)
-│   │   └── semantic/
-│   │       └── embeddings.py     # sentence-transformers embeddings, cosine top-k (in progress)
-│   ├── extraction/
-│   │   ├── schema.py             # node/relationship types, the Outlines grammar source
-│   │   ├── extractor.py          # runs Qwen3-0.6B + Outlines, one chunk in, triples out
-│   │   └── prompts/
-│   │       ├── code_prompt.py    # extraction prompt for code chunks
-│   │       └── text_prompt.py    # extraction prompt for text/config chunks
-│   ├── graph/
-│   │   ├── neo4j_client.py       # connection handling
-│   │   ├── loader.py             # writes one chunk's triples into Neo4j, entity-resolution merge
-│   │   └── traversal.py          # graph expansion outward from seed chunks
-│   ├── pipeline/
-│   │   ├── index_pipeline.py     # offline: corpus -> chunk -> extract -> load graph
-│   │   └── query_pipeline.py     # runtime: query -> retrieve -> graph expand -> answer
-│   └── cache/
-│       └── cache.py              # persistent exact-match cache for query answers
-├── evaluation/
-│   ├── evaluate.py               # recall@k: lexical / lexical+graph (+ future arms)
-│   └── test_queries.json         # 200 ground-truth questions, reused from a sibling project
-├── tests/
-│   ├── test_extraction_quality.py  # pytest: identifier regex holds against live model output
-│   ├── test_cache.py               # pytest: cache round-trips correctly
-│   ├── check_chunks.py             # standalone: inspect chunking output
-│   ├── check_extraction.py         # standalone: inspect one extraction call
-│   ├── check_pipeline.py           # standalone: inspect the query pipeline
-│   ├── check_er.py                 # standalone: verify entity-resolution merging (scoped, non-destructive)
-│   └── load_eval_subset.py         # one-off: extract+load the eval ground-truth chunk subset into Neo4j
-├── data/
-│   ├── raw/                      # corpus (tracked; everything else under data/ is gitignored)
-│   ├── processed/                # persisted BM25 index
-│   └── cache/                    # persisted query cache
-├── RUNNING.md                          # full setup + command reference
-├── docker-setup.md                     # Neo4j via Docker, setup + troubleshooting
-├── Theory.md                           # concepts + architecture, general-to-specific
-├── progress.md                         # build tracker + decisions log
-├── CLAUDE.md                           # project conventions for AI-assisted development
-├── colab-notebook-agent-instructions.md  # spec for a Colab demo notebook (not yet built)
-├── pyproject.toml
-├── uv.lock
-└── README.md
-```
-
 Click a folder, then click a file inside it, to see what it does:
 
 <details>
