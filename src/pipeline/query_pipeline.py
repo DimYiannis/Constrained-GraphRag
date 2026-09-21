@@ -54,11 +54,12 @@ def answer_query(
             cache_dir: exact-match query cache location
 
         return:
-            {"answer": str, "sources": [(file_path, first, last),...]}
-            sources includes both the BM25 seeds and graph-expanded chunks
+            {"answer": str, "sources": [(file_path, first, last, origin),...]}
+            origin is "lexical" (BM25 seed) or "graph" (graph-expanded),
+            lets a caller show which chunks the graph actually contributed.
 
         an identical (query, k, hops, max_new_tokens) call is served from
-        `cache_dir` without re-running retrieval/graph-expand/generation -
+        `cache_dir` without re-running retrieval/graph-expand/generation,
         the model still has to be loaded by the caller either way, this
         only skips the actual per-query work.
     """
@@ -69,18 +70,22 @@ def answer_query(
 
     ranked = lexical.search(index, query, k)
     seed_chunks = [
-        (index.chunks[cid][0], index.chunks[cid][1], index.chunks[cid][2])
+        (index.chunks[cid][0], index.chunks[cid][1], index.chunks[cid][2], "lexical")
         for cid, _ in ranked
     ]
 
-    expanded = traversal.expand_chunks(driver, seed_chunks, hops=hops)
-    expanded_chunks = [(chunk["file_path"], chunk["first"], chunk["last"]) for chunk in expanded]
+    expand_input = [(fp, first, last) for fp, first, last, _origin in seed_chunks]
+    expanded = traversal.expand_chunks(driver, expand_input, hops=hops)
+    expanded_chunks = [
+        (chunk["file_path"], chunk["first"], chunk["last"], "graph")
+        for chunk in expanded
+    ]
 
     all_chunks = seed_chunks + expanded_chunks
 
     context = "\n---\n".join(
         _reslice(data_dir, file_path, first, last)
-        for file_path, first, last in all_chunks
+        for file_path, first, last, _origin in all_chunks
     )
 
     prompt = PROMPT_TEMPLATE.format(context=context, query=query)
