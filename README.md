@@ -73,9 +73,6 @@ flowchart LR
     ast --> qwen
     plain --> qwen
     qwen --> neodb
-
-    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
-    class semb,embmatrix planned;
 ```
 
 **Online — answering a query** (`pipeline/query_pipeline.py`):
@@ -103,12 +100,7 @@ flowchart LR
 
     merged -- "Prompt" --> llm
     llm -- "Answer" --> user
-
-    classDef planned fill:#f1f3f5,stroke:#adb5bd,color:#495057,stroke-dasharray: 5 5;
-    class sem,fusion planned;
 ```
-
-🟢 solid = built and tested · ⬜ dashed = designed, not yet built (semantic embeddings, RRF fusion)
 
 ---
 
@@ -145,10 +137,8 @@ The CLI entry point. Fire turns each method on `RagCLI` into a command — `inde
 
 </details>
 
-</details>
-
 <details>
-<summary>📁 <strong>src/chunking/</strong></summary>
+<summary>📁 <strong>chunking/</strong></summary>
 
 <details>
 <summary>📄 <code>chunk_corpus.py</code></summary>
@@ -181,7 +171,10 @@ The `Chunk` dataclass, and the shared span-splitting logic (cuts at a blank line
 </details>
 
 <details>
-<summary>📁 <strong>src/retrieval/lexical/</strong></summary>
+<summary>📁 <strong>retrieval/</strong></summary>
+
+<details>
+<summary>📁 <strong>lexical/</strong></summary>
 
 <details>
 <summary>📄 <code>tokenizer.py</code></summary>
@@ -200,19 +193,28 @@ Builds/saves/loads the BM25 index (backed by `bm25s`), and `search()` — turns 
 </details>
 
 <details>
-<summary>📁 <strong>src/retrieval/semantic/</strong></summary>
+<summary>📁 <strong>semantic/</strong></summary>
 
 <details>
 <summary>📄 <code>embeddings.py</code></summary>
 
-Dense retrieval, in progress: embeds every chunk with `sentence-transformers` (`all-MiniLM-L6-v2`) into an L2-normalized matrix, persisted alongside the BM25 index. `semantic_top_k()` ranks by cosine similarity — a plain dot product, since normalized vectors make that equivalent to cosine similarity without recomputing norms per query.
+Dense retrieval: embeds every chunk with `sentence-transformers` (`all-MiniLM-L6-v2`) into an L2-normalized matrix, persisted alongside the BM25 index. `semantic_top_k()` ranks by cosine similarity — a plain dot product, since normalized vectors make that equivalent to cosine similarity without recomputing norms per query.
 
 </details>
 
 </details>
 
 <details>
-<summary>📁 <strong>src/extraction/</strong></summary>
+<summary>📄 <code>fusion.py</code></summary>
+
+Reciprocal Rank Fusion of a lexical ranking and a semantic ranking: `fuse()` scores each chunk by `Σ 1/(c + rank)` across both rankings — rank-based, not score-based, since BM25 scores and cosine similarities live on completely different scales and directly combining them would let one silently dominate. `hybrid_top_k()` wraps `lexical.search()` + `semantic_top_k()` + `fuse()` into one call, pulling a wider candidate pool (`FUSION_CANDIDATES`, default 100) from each retriever before fusing down to the final `k` — otherwise a chunk ranked low by one retriever but high by the other would never get the chance to surface.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>extraction/</strong></summary>
 
 <details>
 <summary>📄 <code>schema.py</code></summary>
@@ -229,7 +231,10 @@ Loads Qwen3-0.6B through Outlines, builds a reusable constrained generator, runs
 </details>
 
 <details>
-<summary>📄 <code>prompts/code_prompt.py</code> / <code>text_prompt.py</code></summary>
+<summary>📁 <strong>prompts/</strong></summary>
+
+<details>
+<summary>📄 <code>code_prompt.py</code> / <code>text_prompt.py</code></summary>
 
 The two extraction prompts, routed by a chunk's `source_type`. Outlines guarantees the model's output is *structurally* valid; these prompts are what steer it toward *semantically* sensible choices within that structure.
 
@@ -237,8 +242,10 @@ The two extraction prompts, routed by a chunk's `source_type`. Outlines guarante
 
 </details>
 
+</details>
+
 <details>
-<summary>📁 <strong>src/graph/</strong></summary>
+<summary>📁 <strong>graph/</strong></summary>
 
 <details>
 <summary>📄 <code>neo4j_client.py</code></summary>
@@ -262,8 +269,9 @@ Takes a retriever's top-k results as seed chunks (lexical, semantic, or hybrid �
 </details>
 
 </details>
+
 <details>
-<summary>📁 <strong>src/pipeline/</strong></summary>
+<summary>📁 <strong>pipeline/</strong></summary>
 
 <details>
 <summary>📄 <code>index_pipeline.py</code></summary>
@@ -282,12 +290,14 @@ Runtime orchestration: BM25 search for seed chunks → `traversal.py`'s graph ex
 </details>
 
 <details>
-<summary>📁 <strong>src/cache/</strong></summary>
+<summary>📁 <strong>cache/</strong></summary>
 
 <details>
 <summary>📄 <code>cache.py</code></summary>
 
 A persistent, disk-backed exact-match cache for keyed on `(query, k, hops, max_new_tokens)`. Disk-backed deliberately — each CLI call (`python -m src answer`) is its own process, so an in-memory-only cache would not survive to see a repeat query. No semantic matching (a different query text is always a miss, even a near-paraphrase) — that needs an embedding model.
+
+</details>
 
 </details>
 
@@ -351,7 +361,7 @@ One-off, resumable script: extracts + loads into Neo4j only the chunks that over
 <details>
 <summary>📄 <code>raw/&lt;corpus-name&gt;/</code></summary>
 
-Holds the corpus. Gitignored — nothing under it is committed, and no path is hard-coded anywhere in the project; every input/output location is a CLI argument.
+Holds the corpus.
 
 </details>
 
