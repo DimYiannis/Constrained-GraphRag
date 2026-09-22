@@ -63,6 +63,7 @@ class RagCLI:
         cache_directory: str = "data/cache",
         hops: int = 2,
         max_new_tokens: int = 512,
+        show_progress: bool = True,
     ) -> None:
         """
             retrieve -> graph expand -> answer a query
@@ -79,7 +80,7 @@ class RagCLI:
         result = query_pipeline.answer_query(
             str(query), index, driver, Path(data_directory), model,
             k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens),
-            cache_dir=Path(cache_directory),
+            cache_dir=Path(cache_directory), show_progress=bool(show_progress),
         )
 
         console = Console()

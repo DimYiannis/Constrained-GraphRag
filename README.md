@@ -13,9 +13,9 @@
 
 ![answering a real query end-to-end, then again served instantly from cache](./assets/answer_cache_demo.gif)
 
-*The full pipeline — retrieve → graph expand → prompt → answer — on a real question, run twice: once cold, once served from `cache/cache.py`. Same answer, **7.2x faster** the second time.*
+*The full pipeline retrieve → graph expand → prompt → answer, on a real question, run twice: once cold, once served from `cache/cache.py`. Same answer, **7.2x faster** the second time.*
 
-📖 [**RUNNING.md**](./RUNNING.md) — full setup + command reference · 🐳 [**docker-setup.md**](./docker-setup.md) — Neo4j via Docker
+📖 [**RUNNING.md**](./RUNNING.md): full setup + command reference · 🐳 [**docker-setup.md**](./docker-setup.md): Neo4j via Docker
 
 </div>
 
@@ -124,8 +124,8 @@ flowchart LR
 
 Two earlier projects each contributed one core technique reused here, adapted rather than copied wholesale:
 
-- **[RAG Against the Machine](https://github.com/DimYiannis/RAG-Against-the-Machine)** — the BM25 lexical retriever. `retrieval/lexical/tokenizer.py` and `indexer.py` are a direct port of that project's identifier-aware tokenizer and `bm25s`-backed index, adapted to this project's chunk metadata and package layout.
-- **[call me maybe](https://github.com/DimYiannis/call_me_maybe)** — a function-calling engine that constrains a Qwen3-0.6B model's output token-by-token via a hand-rolled state machine over the model's vocabulary, so it can only ever emit valid, schema-conforming JSON. That project's core idea — grammar-constrained decoding making a 0.6B model reliable for structured generation — is exactly the mechanism `extraction/schema.py` is designed around here, this time via the [Outlines](https://github.com/dottxt-ai/outlines) library instead of a hand-rolled decoder.
+- **[RAG Against the Machine](https://github.com/DimYiannis/RAG-Against-the-Machine)**: the BM25 lexical retriever. `retrieval/lexical/tokenizer.py` and `indexer.py` are a direct port of that project's identifier-aware tokenizer and `bm25s`-backed index, adapted to this project's chunk metadata and package layout.
+- **[call me maybe](https://github.com/DimYiannis/call_me_maybe)**: a function-calling engine that constrains a Qwen3-0.6B model's output token-by-token via a hand-rolled state machine over the model's vocabulary, so it can only ever emit valid, schema-conforming JSON. That project's core idea — grammar-constrained decoding making a 0.6B model reliable for structured generation — is exactly the mechanism `extraction/schema.py` is designed around here, this time via the [Outlines](https://github.com/dottxt-ai/outlines) library instead of a hand-rolled decoder.
 
 ---
 
@@ -359,23 +359,23 @@ The script the `answer_cache_demo.gif` recording actually runs: calls `answer` t
 
 ## 🧠 Extraction & Constrained Decoding
 
-The extraction schema (`extraction/schema.py`) is a Pydantic model (`ExtractionResult`) handed directly to Outlines. Outlines compiles that schema into a **finite state machine**, and at every single token the model generates, masks every token that would leave a valid path through that FSM down to probability zero before sampling — a **mathematical guarantee**, not a "the model was told to behave" guarantee. That's what makes a 0.6B model viable here at all: the reliability gap that would normally require a frontier model is closed by making invalid output structurally unreachable, rather than by making the model smarter.
+The extraction schema (`extraction/schema.py`) is a Pydantic model (`ExtractionResult`) handed directly to Outlines. Outlines compiles that schema into a **finite state machine**, and at every single token the model generates, masks every token that would leave a valid path through that FSM down to probability zero before sampling. That's what makes a 0.6B model viable here at all: the reliability gap that would normally require a frontier model is closed by making invalid output structurally unreachable, rather than by making the model smarter.
 
 Two things worth being precise about scope-wise:
 
-- This constrains *structure and type* (`node_type`/`relation` are enum-restricted fields, `name`/`subject`/`target` are regex-restricted to an identifier shape) — it does **not** constrain *which* real-world thing a name refers to. Two chunks extracting the same real entity under different names (`"Acme Corp"` vs `"Acme Corporation"`) is a separate, unsolved problem — see [Entity Resolution](#-entity-resolution) below.
-- `CHUNK` and `MENTIONED_IN` are deliberately excluded from what the model is even allowed to emit (see `ExtractableNodeType`/`ExtractableRelationType` in `schema.py`) — `Chunk` nodes already exist before extraction runs, and `MENTIONED_IN` is structural (an entity extracted *from* a chunk is trivially mentioned in it), added automatically rather than spending the model's constrained generation budget on it.
+- This constrains *structure and type* (`node_type`/`relation` are enum-restricted fields, `name`/`subject`/`target` are regex-restricted to an identifier shape), it does **not** constrain *which* real-world thing a name refers to. Two chunks extracting the same real entity under different names (`"Acme Corp"` vs `"Acme Corporation"`) is a separate, unsolved problem, see [Entity Resolution](#-entity-resolution) below.
+- `CHUNK` and `MENTIONED_IN` are deliberately excluded from what the model is even allowed to emit (see `ExtractableNodeType`/`ExtractableRelationType` in `schema.py`), `Chunk` nodes already exist before extraction runs, and `MENTIONED_IN` is structural (an entity extracted *from* a chunk is trivially mentioned in it), added automatically rather than spending the model's constrained generation budget on it.
 
 ---
 
 ## 🏷 Closed Taxonomy vs. Open Labeling
 
-**Designing a closed relation-type taxonomy, instead of open-ended extraction.** The default approach in most GraphRAG tutorials — including [Microsoft's original GraphRAG implementation](https://microsoft.github.io/graphrag/index/default_dataflow/), whose extraction prompt asks for a free-text `relationship_description` rather than a fixed type — is to let the model freely choose relationship labels from context — `"calls"`, `"invokes"`, `"is called by"`, `"depends on"`. At small scale this looks harmless. At the scale needed for a usable knowledge graph, it becomes label proliferation: dozens of near-duplicate relation strings fragmenting what should be one queryable edge type, with no clean way back.
+**Designing a closed relation-type taxonomy, instead of open-ended extraction.** The default approach in most GraphRAG tutorials including [Microsoft's original GraphRAG implementation](https://microsoft.github.io/graphrag/index/default_dataflow/), whose extraction prompt asks for a free-text `relationship_description` rather than a fixed type, is to let the model freely choose relationship labels from context `"calls"`, `"invokes"`, `"is called by"`, `"depends on"`. At small scale this looks harmless. At the scale needed for a usable knowledge graph, it becomes label proliferation: dozens of near-duplicate relation strings fragmenting what should be one queryable edge type, with no clean way back.
 
 ### Fixes:
 - Clustering/Deduplication process could be iplemented but it can be lossy and adds a whole extra pipeline stage.
 
-- The alternative, restricting up front, risks losing genuinely useful nuance if the schema is too coarse. Resolved by defining a small, fixed enum of relation types (`CALLS`, `IMPORTS`, `INHERITS_FROM`, `RELATES_TO`, etc. — see `RelationType` in `schema.py`) and enforcing them at generation time via the same FSM-based constrained decoding used throughout this project: the model is only ever able to emit a token sequence resolving to one of the valid types, trading some expressiveness for guaranteed schema consistency. The right tradeoff for a system meant to support reliable multi-hop traversal, less so for open-ended exploratory tagging.
+- The alternative, restricting up front, risks losing genuinely useful nuance if the schema is too coarse. Resolved by defining a small, fixed enum of relation types (`CALLS`, `IMPORTS`, `INHERITS_FROM`, `RELATES_TO`, etc. see `RelationType` in `schema.py`) and enforcing them at generation time via the same FSM-based constrained decoding used throughout this project: the model is only ever able to emit a token sequence resolving to one of the valid types, trading some expressiveness for guaranteed schema consistency. The right tradeoff for a system meant to support reliable multi-hop traversal, less so for open-ended exploratory tagging.
 
 Each type earns its place by doing one specific, well-defined job — except one, deliberately:
 
@@ -384,9 +384,9 @@ Each type earns its place by doing one specific, well-defined job — except one
 - **`INHERITS_FROM`** — a class inherits from another class. Structural, unambiguous — nothing else can mean this.
 - **`DEFINED_IN`** — a function or class is defined within a module. Containment, not association.
 - **`REFERENCES`** — the deliberate cross-modal link: a markdown/doc chunk mentioning a specific function or class by name, connecting documentation to code. A specific, well-defined relationship with a clear rule for when it applies.
-- **`RELATES_TO`** — "these two entities are related somehow, but not in a way any of the specific types capture." Every other type above is precise *because* this one exists to absorb what doesn't fit — without it, ambiguous cases would pressure the specific types to loosen their own definitions instead.
+- **`RELATES_TO`** — "these two entities are related somehow, but not in a way any of the specific types capture." Every other type above is precise *because* this one exists to absorb what doesn't fit without it, ambiguous cases would pressure the specific types to loosen their own definitions instead.
 
-*What I'd do differently:* design the enum with an explicit versioning/extension process from the start, rather than treating it as fixed. A closed schema solves label proliferation, but a genuinely new relationship type the initial design didn't anticipate has nowhere to go except a catch-all like `RELATES_TO` — which just relocates the fuzziness instead of removing it. 
+*What I'd do differently:* design the enum with an explicit versioning/extension process from the start, rather than treating it as fixed. A closed schema solves label proliferation, but a genuinely new relationship type the initial design didn't anticipate has nowhere to go except a catch-all like `RELATES_TO`, which just relocates the fuzziness instead of removing it. 
 - Better: periodically review catch-all usage as a signal for when the enum itself needs a deliberate, reviewed addition — schema evolution as a governed process, not a binary choice between fully open and fully frozen.
 
 ---
@@ -395,7 +395,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 **The closed taxonomy above solves *type* consistency. It says nothing about *identity*.** `NodeType`/`RelationType` only guarantee that two independent extractions are *allowed* to agree a thing is a `Function` or a `Class` — they don't guarantee two mentions of the same real-world thing end up as the same graph node.
 
-**Our problem, concretely:** `graph/loader.py` currently merges entities by exact string match — `MERGE` on `(label, name)`. Two chunks both extracting an entity named `"TokenizerGroup"` correctly collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it. That's the mechanism that makes cross-chunk graph connections happen at all. But exact match does nothing for `"Acme Corp"` vs `"Acme Corporation"` — two mentions of the same real entity, spelled differently, silently become two separate nodes. No error, no warning — just quietly fragmented graph structure, each half missing edges the other has.
+**Our problem, concretely:** `graph/loader.py` currently merges entities by exact string match `MERGE` on `(label, name)`. Two chunks both extracting an entity named `"TokenizerGroup"` correctly collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it. That's the mechanism that makes cross-chunk graph connections happen at all. But exact match does nothing for `"Acme Corp"` vs `"Acme Corporation"` two mentions of the same real entity, spelled differently, silently become two separate nodes. No error, no warning just quietly fragmented graph structure, each half missing edges the other has.
 
 [Aakash's writeup on entity resolution](https://www.aakashx.com/blog/knowledge-architecture-ontologies-entity-resolution-graphs/#5-18-graphrag) deterministic matching (exact ID/key equality) vs. probabilistic/fuzzy matching (similarity + confidence scoring) -> "probabilistic inference should not silently become authoritative master data." Avoid automatical merge of probable similar entities (uncertain inference). If merge is wrong the mistake is silent and harder to catch than a duplicate.
 
@@ -405,9 +405,9 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 ![lexical vs semantic vs hybrid recall@k, live in the terminal](./assets/eval_demo.gif)
 
-*Live recall@k across all three retrieval arms — **lexical** (BM25), **semantic** (`sentence-transformers` dense embeddings), and **hybrid** (Reciprocal Rank Fusion of both) — each with an optional graph-expansion pass.*
+*Live recall@k across all three retrieval arms **lexical** (BM25), **semantic** (`sentence-transformers` dense embeddings), and **hybrid** (Reciprocal Rank Fusion of both), each with an optional graph-expansion pass.*
 
-Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span. All three retrieval modes ran against the same corpus, same questions, same graph.
+Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus, see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span. All three retrieval modes ran against the same corpus, same questions, same graph.
 
 | k | lexical | +graph | semantic | +graph | hybrid | +graph |
 |---|---------|--------|----------|--------|--------|--------|
@@ -417,8 +417,8 @@ Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling
 
 Not the naive "hybrid wins" story:
 
-- **Lexical is the strongest single retriever here, by a clear margin.** This corpus is a codebase — ground truth hinges on exact identifiers and function names, exactly what BM25's term matching is built for.
-- **Semantic alone is meaningfully weaker** (0.355-0.515). It finds *conceptually* related content rather than exact-name matches — for the query `"enable lora"`, semantic surfaces `docs/features/lora.md` and LoRA-handling code in `worker/model_runner.py`, while lexical surfaces `tests/lora/test_tokenizer_group.py` and `transformers_utils/tokenizer_group.py` — genuinely different, both reasonable, but this eval's precise identifier-anchored ground truth rewards lexical's style more.
+- **Lexical is the strongest single retriever here, by a clear margin.** This corpus is a codebase, ground truth hinges on exact identifiers and function names, exactly what BM25's term matching is built for.
+- **Semantic alone is meaningfully weaker** (0.355-0.515). It finds *conceptually* related content rather than exact-name matches, for the query `"enable lora"`, semantic surfaces `docs/features/lora.md` and LoRA-handling code in `worker/model_runner.py`, while lexical surfaces `tests/lora/test_tokenizer_group.py` and `transformers_utils/tokenizer_group.py` — genuinely different, both reasonable, but this eval's precise identifier-anchored ground truth rewards lexical's style more.
 - **Hybrid lands between the two, closer to lexical than to semantic — and never beats lexical alone.** RRF fusion pulls lexical's strong ranking down by averaging in semantic's weaker one; on a corpus this identifier-precise, fusing in a weaker retriever costs more than it adds.
 - **Graph expansion helps every single mode, at every k, with no exceptions** — the one fully consistent result in the whole table, and the strongest evidence here that the graph mechanism itself is sound, independent of which retriever finds the seed chunks.
 
