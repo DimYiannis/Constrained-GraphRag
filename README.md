@@ -6,8 +6,14 @@
 ![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
 ![bm25s](https://img.shields.io/badge/bm25s-lexical%20retrieval-orange)
 ![Outlines](https://img.shields.io/badge/Outlines-constrained%20decoding-9146FF)
+![sentence-transformers](https://img.shields.io/badge/sentence--transformers-semantic%20retrieval-2E8B57)
+![RRF](https://img.shields.io/badge/RRF-hybrid%20fusion-1E90FF)
 
 **Finding the right ~2000 characters out of 28,246 chunks of the vLLM codebase via BM25.**
+
+![answering a real query end-to-end, then again served instantly from cache](./assets/answer_cache_demo.gif)
+
+*The full pipeline — retrieve → graph expand → prompt → answer — on a real question, run twice: once cold, once served from `cache/cache.py`. Same answer, **7.2x faster** the second time.*
 
 📖 [**RUNNING.md**](./RUNNING.md) — full setup + command reference · 🐳 [**docker-setup.md**](./docker-setup.md) — Neo4j via Docker
 
@@ -174,33 +180,23 @@ The `Chunk` dataclass, and the shared span-splitting logic (cuts at a blank line
 <summary>📁 <strong>retrieval/</strong></summary>
 
 <details>
-<summary>📁 <strong>lexical/</strong></summary>
-
-<details>
-<summary>📄 <code>tokenizer.py</code></summary>
+<summary>📄 <code>lexical/tokenizer.py</code></summary>
 
 Turns text into BM25 search terms: lowercases, and splits identifiers into both whole and subtoken forms (`enable_lora` → `enable_lora`, `enable`, `lora`) so a query can match either way.
 
 </details>
 
 <details>
-<summary>📄 <code>indexer.py</code></summary>
+<summary>📄 <code>lexical/indexer.py</code></summary>
 
 Builds/saves/loads the BM25 index (backed by `bm25s`), and `search()` — turns a query into ranked, tie-broken chunk results.
 
 </details>
 
-</details>
-
 <details>
-<summary>📁 <strong>semantic/</strong></summary>
-
-<details>
-<summary>📄 <code>embeddings.py</code></summary>
+<summary>📄 <code>semantic/embeddings.py</code></summary>
 
 Dense retrieval: embeds every chunk with `sentence-transformers` (`all-MiniLM-L6-v2`) into an L2-normalized matrix, persisted alongside the BM25 index. `semantic_top_k()` ranks by cosine similarity — a plain dot product, since normalized vectors make that equivalent to cosine similarity without recomputing norms per query.
-
-</details>
 
 </details>
 
@@ -216,31 +212,7 @@ Reciprocal Rank Fusion of a lexical ranking and a semantic ranking: `fuse()` sco
 <details>
 <summary>📁 <strong>extraction/</strong></summary>
 
-<details>
-<summary>📄 <code>schema.py</code></summary>
-
-The fixed vocabulary of node/relationship types, and the Pydantic model (`ExtractionResult`) handed directly to Outlines — this file *is* the grammar the model's output gets constrained against, not just documentation of it.
-
-</details>
-
-<details>
-<summary>📄 <code>extractor.py</code></summary>
-
-Loads Qwen3-0.6B through Outlines, builds a reusable constrained generator, runs it on one chunk at a time: text in, a validated `ExtractionResult` (entities + relationships) out. The model never sees more than one chunk at once.
-
-</details>
-
-<details>
-<summary>📁 <strong>prompts/</strong></summary>
-
-<details>
-<summary>📄 <code>code_prompt.py</code> / <code>text_prompt.py</code></summary>
-
-The two extraction prompts, routed by a chunk's `source_type`. Outlines guarantees the model's output is *structurally* valid; these prompts are what steer it toward *semantically* sensible choices within that structure.
-
-</details>
-
-</details>
+`schema.py`, `extractor.py`, `prompts/code_prompt.py` / `text_prompt.py` — the grammar, the constrained generator, and the two extraction prompts. Covered in depth in [Extraction & Constrained Decoding](#-extraction--constrained-decoding).
 
 </details>
 
@@ -257,7 +229,7 @@ Connection handling: builds a driver from `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWO
 <details>
 <summary>📄 <code>loader.py</code></summary>
 
-Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity (merged by *normalized* name+type — lowercased, punctuation/whitespace stripped — so `"TokenizerGroup"` and `"tokenizer_group"` collapse onto one shared node instead of silently fragmenting), the `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges between entities. See [Entity Resolution](#-entity-resolution).
+Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity, `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges. The entity-merge logic (the actual entity-resolution mechanism) is covered in [Entity Resolution](#-entity-resolution).
 
 </details>
 
@@ -292,12 +264,7 @@ Runtime orchestration: BM25 search for seed chunks → `traversal.py`'s graph ex
 <details>
 <summary>📁 <strong>cache/</strong></summary>
 
-<details>
-<summary>📄 <code>cache.py</code></summary>
-
-A persistent, disk-backed exact-match cache for keyed on `(query, k, hops, max_new_tokens)`. Disk-backed deliberately — each CLI call (`python -m src answer`) is its own process, so an in-memory-only cache would not survive to see a repeat query. No semantic matching (a different query text is always a miss, even a near-paraphrase) — that needs an embedding model.
-
-</details>
+`cache.py` — persistent, disk-backed exact-match cache keyed on `(query, k, hops, max_new_tokens)`; disk-backed since each CLI call is its own process. Its exact-match-only limitation is covered in [Challenges Faced](#-challenges-faced).
 
 </details>
 
@@ -306,19 +273,7 @@ A persistent, disk-backed exact-match cache for keyed on `(query, k, hops, max_n
 <details>
 <summary>📁 <strong>evaluation/</strong></summary>
 
-<details>
-<summary>📄 <code>evaluate.py</code></summary>
-
-Recall@k over `test_queries.json`. A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span, not just graze it. Reports `lexical` and `lexical+graph` (and per-split docs/code numbers) today — structured to add `semantic`/`hybrid` arms alongside, not replace them, once those retrievers exist.
-
-</details>
-
-<details>
-<summary>📄 <code>test_queries.json</code></summary>
-
-200 questions with real answers and ground-truth `(file_path, first, last)` source spans — reused from a sibling project's dataset built against the same vLLM 0.10.1 corpus, rather than hand-authored from scratch. Every span was spot-checked against this project's own corpus copy before being trusted as ground truth.
-
-</details>
+`evaluate.py` (recall@k across all retrieval modes) and `test_queries.json` (the 200-question ground truth) — methodology and numbers covered in [Results](#-results).
 
 </details>
 
@@ -368,7 +323,7 @@ Holds the corpus.
 <details>
 <summary>📄 <code>processed/</code></summary>
 
-The persisted BM25 index (`bm25s`-backed) — built once by `index`, loaded by every `search`/`answer` call after.
+The persisted BM25 index (`bm25s`-backed) and the semantic embeddings matrix (`embeddings.npy`) — built once by `index` / the embeddings build script respectively, loaded by every `search`/`answer`/`evaluate` call after.
 
 </details>
 
@@ -376,6 +331,25 @@ The persisted BM25 index (`bm25s`-backed) — built once by `index`, loaded by e
 <summary>📄 <code>cache/</code></summary>
 
 `cache.py`'s persisted query cache (see `src/cache/`) — survives across CLI invocations since each one is its own process.
+
+</details>
+
+</details>
+
+<details>
+<summary>📁 <strong>assets/</strong></summary>
+
+<details>
+<summary>📄 <code>eval_demo.gif</code> / <code>answer_cache_demo.gif</code></summary>
+
+The two demo GIFs embedded at the top of this README — the lexical/semantic/hybrid recall@k comparison, and the full pipeline answering a real question twice (cold vs. cache hit). Each has a matching `.cast` file (the raw `asciinema` recording it was rendered from via `agg`).
+
+</details>
+
+<details>
+<summary>📄 <code>record_answer_cache_demo.sh</code></summary>
+
+The script the `answer_cache_demo.gif` recording actually runs: calls `answer` twice with the same query, times each with `date`/`bc`, prints the real elapsed seconds and speedup — makes the cache's effect visible on screen rather than relying on the GIF's own timing.
 
 </details>
 
@@ -429,26 +403,53 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 ## 📊 Results
 
-Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span.
+![lexical vs semantic vs hybrid recall@k, live in the terminal](./assets/eval_demo.gif)
 
+*Live recall@k across all three retrieval arms — **lexical** (BM25), **semantic** (`sentence-transformers` dense embeddings), and **hybrid** (Reciprocal Rank Fusion of both) — each with an optional graph-expansion pass.*
 
-| k | lexical | lexical+graph | Δ |
-|---|---------|---------------|---|
-| 3 | 0.668 | 0.714 | +0.046 |
-| 5 | 0.709 | 0.749 | +0.040 |
-| 10 | 0.789 | 0.819 | +0.030 |
+Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus — see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span. All three retrieval modes ran against the same corpus, same questions, same graph.
 
-Graph expansion adds a real, consistent lift at every k — not just noise. It helps docs more than code (denser `REFERENCES` cross-links between prose and the function/class it describes than code chunks tend to have between each other).
+| k | lexical | +graph | semantic | +graph | hybrid | +graph |
+|---|---------|--------|----------|--------|--------|--------|
+| 3 | 0.665 | 0.710 | 0.355 | 0.440 | 0.565 | 0.620 |
+| 5 | 0.705 | 0.745 | 0.400 | 0.490 | 0.650 | 0.700 |
+| 10 | 0.785 | 0.815 | 0.515 | 0.610 | 0.725 | 0.770 |
 
-*Semantic and hybrid arms coming next — this table gets extended once those retrievers exist, not before.*
+Not the naive "hybrid wins" story:
+
+- **Lexical is the strongest single retriever here, by a clear margin.** This corpus is a codebase — ground truth hinges on exact identifiers and function names, exactly what BM25's term matching is built for.
+- **Semantic alone is meaningfully weaker** (0.355-0.515). It finds *conceptually* related content rather than exact-name matches — for the query `"enable lora"`, semantic surfaces `docs/features/lora.md` and LoRA-handling code in `worker/model_runner.py`, while lexical surfaces `tests/lora/test_tokenizer_group.py` and `transformers_utils/tokenizer_group.py` — genuinely different, both reasonable, but this eval's precise identifier-anchored ground truth rewards lexical's style more.
+- **Hybrid lands between the two, closer to lexical than to semantic — and never beats lexical alone.** RRF fusion pulls lexical's strong ranking down by averaging in semantic's weaker one; on a corpus this identifier-precise, fusing in a weaker retriever costs more than it adds.
+- **Graph expansion helps every single mode, at every k, with no exceptions** — the one fully consistent result in the whole table, and the strongest evidence here that the graph mechanism itself is sound, independent of which retriever finds the seed chunks.
+
+<details>
+<summary>Per-split breakdown (docs vs code)</summary>
+
+**docs (n=101)**
+
+| k | lexical | +graph | semantic | +graph | hybrid | +graph |
+|---|---------|--------|----------|--------|--------|--------|
+| 3 | 0.772 | 0.812 | 0.455 | 0.554 | 0.594 | 0.663 |
+| 5 | 0.792 | 0.832 | 0.495 | 0.594 | 0.673 | 0.723 |
+| 10 | 0.851 | 0.881 | 0.564 | 0.673 | 0.743 | 0.792 |
+
+**code (n=99)**
+
+| k | lexical | +graph | semantic | +graph | hybrid | +graph |
+|---|---------|--------|----------|--------|--------|--------|
+| 3 | 0.556 | 0.606 | 0.253 | 0.323 | 0.535 | 0.576 |
+| 5 | 0.616 | 0.657 | 0.303 | 0.384 | 0.626 | 0.677 |
+| 10 | 0.717 | 0.747 | 0.465 | 0.545 | 0.707 | 0.747 |
+
+Semantic's gap vs. lexical is proportionally wider on code than docs (k=3: code's semantic score is under half of lexical's, docs' is closer to 60%) — semantic similarity has less to latch onto in code identifiers (`kv_cache_coordinator`, `compressed_tensors`) than in prose, which has more natural-language structure the embedding model can actually use.
+
+</details>
 
 ---
 
 ## ⚠️ Limitations
 
-- **The graph only covers ~300 of the corpus's 28,246 chunks.** Extraction runs one chunk at a time through Qwen3-0.6B (~60-90s/chunk observed).
-A full-corpus run is weeks of compute, not something to do by default. 
-The graph was instead ingested only over the chunks that `evaluation/test_queries.json`'s ground-truth answers actually live in, enough to run a real evaluation but not a full production-scale graph. Lexical search, by contrast, runs over the entire corpus — see [Results](#-results) for how that scoping affects the comparison.
+- **The graph only covers 303 of the corpus's 28,246 chunks (299 loaded — 8 permanently failed truncation, see Challenges Faced).** Extraction runs one chunk at a time through Qwen3-0.6B (~60-90s/chunk observed). A full-corpus run is weeks of compute, not something to do by default. The graph was instead ingested only over the chunks that `evaluation/test_queries.json`'s ground-truth answers actually live in, enough to run a real evaluation but not a full production-scale graph. Lexical search, by contrast, runs over the entire corpus — see [Results](#-results) for how that scoping affects the comparison.
 
 ---
 
@@ -462,6 +463,8 @@ The graph was instead ingested only over the chunks that `evaluation/test_querie
 **One edge case the regex fix doesn't close:** it constrains *shape*, not *truth*. The model can still fabricate a string that looks identifier-shaped but isn't a real symbol anywhere in the source — observed case: `from vllm.utils import LRUCache` got mashed into `"from_vllm.utils.lrucache"` as a relationship target, which satisfies the regex (only letters/underscores/dots) while being a fabrication. A regex can only ever constrain what a string *looks like*; verifying it's a *real* symbol from the actual chunk would need a fundamentally different mechanism.
 
 **The query cache only ever matches identically.** `cache/cache.py` keys on the literal `(query, k, hops, max_new_tokens)` tuple — `"enable lora"` and `"Enable LoRA"` are two totally different cache entries, even though a person reads them as the same question. A cache that catches near-paraphrases needs a **semantic cache** instead — embed the query, compare similarity against past queries.
+
+**A small fraction of chunks never finish extraction, even with a bumped token budget.** Loading the eval ground-truth subset (303 chunks), 8 permanently failed with `EOF while parsing a string` — the model was still mid-entity when it hit `max_new_tokens` (raised to 768 for this run, up from the default 512), so Outlines' FSM produced valid-so-far-but-incomplete JSON rather than a parseable `ExtractionResult`. Almost always entity-dense code files (attention kernels, quantization backends) generating more entities/relationships than the budget anticipated. Accepted as a known error rate rather than chased further — the fix (a much larger budget, or splitting the chunk itself) trades extraction cost for a rare failure mode that doesn't materially affect graph coverage at this scale.
 
    ---
 

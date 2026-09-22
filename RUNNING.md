@@ -86,7 +86,24 @@ make search QUERY="enable lora"
 Returns ranked `(file_path, span, score)` results — no LLM, no graph, just
 BM25 over the index built in step 5.
 
-## 7. Load chunks into the graph
+## 7. Build semantic embeddings (optional, for semantic/hybrid retrieval)
+
+Not yet exposed as a `make`/CLI command — run directly:
+
+```bash
+uv run python -c "
+from pathlib import Path
+from src.retrieval import lexical
+from src.retrieval.semantic import embeddings
+
+index = lexical.load_index(Path('data/processed'))
+model = embeddings.load_model()
+matrix = embeddings.build_embeddings(index, Path('data/raw/vllm-0.10.1'), model=model)
+target = embeddings.save_embeddings(matrix, Path('data/processed'))
+print('saved:', target, matrix.shape)
+"
+```
+## 8. Load chunks into the graph
 
 Not yet exposed as a `make`/CLI command — run directly:
 
@@ -103,9 +120,12 @@ print(f'processed {processed} chunks')
 `limit` defaults to 20, not the full corpus — extraction measured
 ~15-30s/chunk on a single machine, so the full ~28,000-chunk corpus is
 days of compute. Raise `limit` (or pass `None`) deliberately, expecting the
-runtime that implies.
+runtime that implies. `tests/load_eval_subset.py` is a resumable variant
+that only extracts the chunks `evaluation/test_queries.json`'s ground
+truth actually touches (a few hundred, not the whole corpus) — what the
+Results section's `lexical+graph` numbers were built from.
 
-## 8. Answer a question (retrieve → graph expand → answer)
+## 9. Answer a question (retrieve → graph expand → answer)
 
 ```bash
 make answer QUERY="how does enable_lora work"
@@ -113,11 +133,38 @@ make answer QUERY="how does enable_lora work"
 ```
 
 **Important:** `--data_directory` here must be the *same* corpus root used
-in step 5 (index) and step 7 (graph load) — `file_path` values only match
+in step 5 (index) and step 8 (graph load) — `file_path` values only match
 across BM25 results and graph `Chunk` nodes if computed relative to the
 same root. Answers will only reflect content whose chunks were actually
-loaded into the graph in step 7 — with the default `limit=20`, that's a
+loaded into the graph in step 8 — with the default `limit=20`, that's a
 small slice of the corpus, not the whole thing.
+
+## 10. Run the evaluation
+
+```bash
+uv run python -m evaluation.evaluate --k "3,5,10" --modes "lexical"
+# or, the full 3-way comparison (needs step 7's embeddings + step 8's graph):
+uv run python -m evaluation.evaluate --k "3,5,10" --modes "lexical,semantic,hybrid"
+```
+
+Recall@k against `evaluation/test_queries.json`'s 200 ground-truth
+questions, per mode, each with an optional `+graph` arm (drop with
+`--use_graph False`). Prints one block per `k` as it finishes (a
+generator under the hood, see `evaluate.py`'s docstring) — pass
+`--reveal_delay 2` to pause between blocks (handy when recording a demo),
+or `--show_progress False` to silence the per-query `tqdm` bars.
+
+## 11. Record a demo GIF
+
+```bash
+asciinema rec --command "uv run python -m evaluation.evaluate --k \"3,5,10\" --modes \"lexical,semantic,hybrid\"" --headless --idle-time-limit 2 --overwrite --title "Constrained GraphRAG: lexical vs semantic vs hybrid" --window-size 110x30 assets/eval_demo.cast
+agg --theme monokai --idle-time-limit 2 --font-size 16 assets/eval_demo.cast assets/eval_demo.gif
+```
+
+`asciinema`/`agg` are Homebrew CLI tools (`brew install asciinema agg`),
+not Python dependencies — unrelated to `uv sync`/`.venv`. Both commands
+`--overwrite`, so re-running just replaces `assets/eval_demo.gif` in
+place — already referenced at the top of `README.md`.
 
 ---
 
@@ -127,6 +174,7 @@ small slice of the corpus, not the whole thing.
 make neo4j-up          # or: docker start graphrag-neo4j
 make search QUERY="..."   # or: uv run python -m src search "..." --k 5
 make answer QUERY="..."   # or: uv run python -m src answer "..." --data_directory <corpus root>
+uv run python -m evaluation.evaluate --k "3,5,10" --modes "lexical,semantic,hybrid"
 make test               # or: uv run pytest tests/ -v
 make clean               # or: find . -type d -name "__pycache__" -exec rm -rf {} + && rm -rf .pytest_cache
 ```
