@@ -1,19 +1,17 @@
 """
-    recall@k eval for lexical / semantic / hybrid retrieval, each with an
-    optional +graph arm, against evaluation/test_queries.json
-    Formula:
-                                Number of Relevant Items in Top K
-        Recall@K=       ------------------------------------------------------
-                        Total Number of Relevant Items in Ground Truth Dataset
+recall@k eval for lexical / semantic / hybrid retrieval, each with an
+optional +graph arm, against evaluation/test_queries.json
+Formula:
+                            Number of Relevant Items in Top K
+    Recall@K=       ------------------------------------------------------
+                    Total Number of Relevant Items in Ground Truth Dataset
 """
 
 import json
 import time
 from pathlib import Path
-
 from dotenv import load_dotenv
 from tqdm import tqdm
-
 from src.graph import neo4j_client, traversal
 from src.retrieval import lexical
 from src.retrieval import fusion
@@ -31,9 +29,9 @@ COVERAGE = 0.5
 
 def _overlaps(truth_first: int, truth_last: int, b_first: int, b_last: int) -> bool:
     """
-        true if two spans overlap, requiring at least COVERAGE of the
-        ground-truth span to actually be covered - a single-character
-        graze doesn't count as a hit
+    true if two spans overlap, requiring at least COVERAGE of the
+    ground-truth span to actually be covered - a single-character
+    graze doesn't count as a hit
     """
     intersection = min(truth_last, b_last) - max(truth_first, b_first)
     if (intersection / (truth_last - truth_first)) < COVERAGE:
@@ -43,15 +41,17 @@ def _overlaps(truth_first: int, truth_last: int, b_first: int, b_last: int) -> b
 
 def _is_hit(sources: list[dict], chunks: list[tuple[str, int, int]]) -> bool:
     """
-        true if a ground-truth source overlaps any retrieved chunk
+    true if a ground-truth source overlaps any retrieved chunk
     """
     for source in sources:
         for file_path, first, last in chunks:
             if file_path != source["file_path"]:
                 continue
             if _overlaps(
-                source["first_character_index"], source["last_character_index"],
-                first, last,
+                source["first_character_index"],
+                source["last_character_index"],
+                first,
+                last,
             ):
                 return True
     return False
@@ -67,18 +67,18 @@ def _seed_chunks(
     candidates: int,
 ) -> list[tuple[str, int, int]]:
     """
-        run one retrieval mode, return (file_path, first, last) seed chunks
+    run one retrieval mode, return (file_path, first, last) seed chunks
 
-        args:
-            mode: "lexical", "semantic", or "hybrid"
-            query
-            k: number of results wanted
-            index: bm25 index - always needed, hybrid uses it too
-            semantic_matrix: l2-normalized embedding matrix, or None if
-                mode == "lexical" (never loaded in that case)
-            semantic_model: loaded SentenceTransformer, or None
-            candidates: hybrid's per-retriever candidate pool size before
-                fusing down to k (see fusion.FUSION_CANDIDATES)
+    args:
+        mode: "lexical", "semantic", or "hybrid"
+        query
+        k: number of results wanted
+        index: bm25 index - always needed, hybrid uses it too
+        semantic_matrix: l2-normalized embedding matrix, or None if
+            mode == "lexical" (never loaded in that case)
+        semantic_model: loaded SentenceTransformer, or None
+        candidates: hybrid's per-retriever candidate pool size before
+            fusing down to k (see fusion.FUSION_CANDIDATES)
     """
     if mode == "lexical":
         ranked = lexical.search(index, query, k)
@@ -109,32 +109,32 @@ def evaluate(
     show_progress: bool = True,
 ):
     """
-        recall@k for one or more retrieval modes, each optionally +graph
+    recall@k for one or more retrieval modes, each optionally +graph
 
-        a generator, not a function returning a dict all at once - yields
-        (k, entry) as each k value finishes, so a caller (main(), below)
-        can print/display results progressively instead of holding
-        everything until every k and every mode is done. The corpus is
-        loaded once regardless - this doesn't cost anything beyond a
-        different way of handing results back.
+    a generator, not a function returning a dict all at once - yields
+    (k, entry) as each k value finishes, so a caller (main(), below)
+    can print/display results progressively instead of holding
+    everything until every k and every mode is done. The corpus is
+    loaded once regardless - this doesn't cost anything beyond a
+    different way of handing results back.
 
-        args:
-            test_queries_path
-            processed_directory: dir holding the saved bm25 index +
-                embeddings matrix
-            k_values: bm25/semantic/hybrid top-k values
-            modes: which retrieval modes to evaluate - any of
-                "lexical", "semantic", "hybrid"
-            hops: graph expansion depth
-            use_graph: also compute each mode's +graph recall
-            candidates: hybrid's per-retriever candidate pool before fusion
-            database: neo4j database
-            show_progress: tqdm bar over queries, one per k value
+    args:
+        test_queries_path
+        processed_directory: dir holding the saved bm25 index +
+            embeddings matrix
+        k_values: bm25/semantic/hybrid top-k values
+        modes: which retrieval modes to evaluate - any of
+            "lexical", "semantic", "hybrid"
+        hops: graph expansion depth
+        use_graph: also compute each mode's +graph recall
+        candidates: hybrid's per-retriever candidate pool before fusion
+        database: neo4j database
+        show_progress: tqdm bar over queries, one per k value
 
-        yields:
-            (k, {mode: recall, f"{mode}+graph": recall, ...,
-                 "per_split": {split: {mode: recall, ..., "n": count}}})
-            one pair per k value, in k_values order
+    yields:
+        (k, {mode: recall, f"{mode}+graph": recall, ...,
+             "per_split": {split: {mode: recall, ..., "n": count}}})
+        one pair per k value, in k_values order
     """
     queries = json.loads(Path(test_queries_path).read_text())
     index = lexical.load_index(Path(processed_directory))
@@ -143,7 +143,9 @@ def evaluate(
     # only load the embedding model/matrix if a mode actually needs them -
     # keeps a pure lexical run fast and dependency-light
     needs_semantic = any(mode in ("semantic", "hybrid") for mode in modes)
-    semantic_matrix = embeddings.load_embeddings(processed_directory) if needs_semantic else None
+    semantic_matrix = (
+        embeddings.load_embeddings(processed_directory) if needs_semantic else None
+    )
     semantic_model = embeddings.load_model() if needs_semantic else None
 
     try:
@@ -168,8 +170,13 @@ def evaluate(
 
                 for mode in modes:
                     seed_chunks = _seed_chunks(
-                        mode, query["question"], k, index,
-                        semantic_matrix, semantic_model, candidates,
+                        mode,
+                        query["question"],
+                        k,
+                        index,
+                        semantic_matrix,
+                        semantic_model,
+                        candidates,
                     )
 
                     if _is_hit(query["sources"], seed_chunks):
@@ -205,7 +212,8 @@ def evaluate(
                             (mode, counts[mode][0] / counts["n"]),
                             *(
                                 [(f"{mode}+graph", counts[mode][1] / counts["n"])]
-                                if use_graph else []
+                                if use_graph
+                                else []
                             ),
                         )
                     },
@@ -232,26 +240,36 @@ def main(
     reveal_delay: float = 0.0,
 ) -> None:
     """
-        CLI entry: print a recall@k table for the requested mode(s),
-        one k value at a time as each finishes (evaluate() is a
-        generator - see its docstring)
+    CLI entry: print a recall@k table for the requested mode(s),
+    one k value at a time as each finishes (evaluate() is a
+    generator - see its docstring)
 
-        reveal_delay: seconds to pause after printing each k value's
-            block, before moving on to the next. 0 by default (no
-            reason to slow down a real evaluation run) - set to
-            something like 2-3 when recording a demo, so a viewer
-            actually has time to read one block before the next appears.
+    reveal_delay: seconds to pause after printing each k value's
+        block, before moving on to the next. 0 by default (no
+        reason to slow down a real evaluation run) - set to
+        something like 2-3 when recording a demo, so a viewer
+        actually has time to read one block before the next appears.
     """
     # Fire auto-splits a comma-containing CLI arg into a tuple before this
     # function even runs, so k/modes may already be a tuple, or a plain
     # str/int if there was only one value, handle all three shapes.
     k_values = tuple(int(x) for x in k) if isinstance(k, tuple) else (int(k),)
-    mode_values = tuple(str(m).strip() for m in modes) if isinstance(modes, tuple) else (str(modes).strip(),)
+    mode_values = (
+        tuple(str(m).strip() for m in modes)
+        if isinstance(modes, tuple)
+        else (str(modes).strip(),)
+    )
 
     for kk, entry in evaluate(
-        Path(test_queries_path), Path(processed_directory),
-        k_values, mode_values, int(hops), bool(use_graph),
-        int(candidates), database, bool(show_progress),
+        Path(test_queries_path),
+        Path(processed_directory),
+        k_values,
+        mode_values,
+        int(hops),
+        bool(use_graph),
+        int(candidates),
+        database,
+        bool(show_progress),
     ):
         print(f"--- recall@{kk} ---")
         for mode in mode_values:

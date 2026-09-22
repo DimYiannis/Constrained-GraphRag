@@ -7,11 +7,14 @@ from src.graph.neo4j_client import run_query
 # used separately to get in/out of the graph.
 TRAVERSAL_RELATIONS = "CALLS|IMPORTS|INHERITS_FROM|DEFINED_IN|RELATES_TO|REFERENCES"
 
+DEFAULT_MAX_EXPANDED = 50
+
 def expand_chunks(
     driver,
     chunks: list[tuple[str, int, int]],
     hops: int = 2,
     database: str | None = None,
+    max_expanded: int = DEFAULT_MAX_EXPANDED,
 ) -> list[dict]:
     """
         from bm25 we get the seed chunks
@@ -23,10 +26,16 @@ def expand_chunks(
             chunks: seed chunks (file path, first, last)
             hops: max traversal depth
             database
+            max_expanded: cap on newly-reached chunks a hub entity
+                (high fanout, something referenced everywhere) can
+                otherwise blow the expansion up to hundreds of chunks,
+                which balloons the prompt and tanks generation time for
+                no retrieval benefit
 
         return:
-            [{file_path, first, last}, ...] for newly reached chunks
-            seed chunks are excluded from the result
+            [{file_path, first, last}, ...] for newly reached chunks,
+            capped at max_expanded. seed chunks are excluded from the
+            result
     """
 
     seeds = [
@@ -43,8 +52,9 @@ def expand_chunks(
         MATCH (seed_entity)-[:{TRAVERSAL_RELATIONS}*1..{hops}]-(related_entity)
         MATCH (related_entity)-[:MENTIONED_IN]->(expanded:Chunk)
         RETURN DISTINCT expanded.file_path AS file_path, expanded.first AS first, expanded.last AS last
+        LIMIT $max_expanded
         """,
-        {"chunks": seeds},
+        {"chunks": seeds, "max_expanded": max_expanded},
         database=database,
     )
     #exclude seed chunks from the result

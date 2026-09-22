@@ -10,6 +10,7 @@ DEFAULT_K = 5
 DEFAULT_HOPS = 2
 DEFAULT_MAX_NEW_TOKENS = 512
 DEFAULT_CACHE_DIR = Path("data/cache")
+DEFAULT_MAX_EXPANDED = traversal.DEFAULT_MAX_EXPANDED
 
 PROMPT_TEMPLATE= """\
 Answer the question using only the context below. if the context\
@@ -39,6 +40,7 @@ def answer_query(
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
     cache_dir: Path = DEFAULT_CACHE_DIR,
     show_progress: bool = True,
+    max_expanded: int = DEFAULT_MAX_EXPANDED,
 ) -> dict:
     """
         retrieve -> graph expand -> prompt -> answer
@@ -56,6 +58,9 @@ def answer_query(
             show_progress: print a one-line status per stage (retrieval,
                 graph expansion, generation) as it happens, instead of
                 silence until the final result
+            max_expanded: cap on graph-expanded chunks (see
+                traversal.expand_chunks) protects against hub-entity
+                fanout blowing up the prompt
 
         return:
             {"answer": str, "sources": [(file_path, first, last, origin),...]}
@@ -87,7 +92,7 @@ def answer_query(
 
     status(f"[2/3] expanding graph ({hops} hops)...")
     expand_input = [(fp, first, last) for fp, first, last, _origin in seed_chunks]
-    expanded = traversal.expand_chunks(driver, expand_input, hops=hops)
+    expanded = traversal.expand_chunks(driver, expand_input, hops=hops, max_expanded=max_expanded)
     expanded_chunks = [
         (chunk["file_path"], chunk["first"], chunk["last"], "graph")
         for chunk in expanded

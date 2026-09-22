@@ -64,6 +64,7 @@ class RagCLI:
         hops: int = 2,
         max_new_tokens: int = 512,
         show_progress: bool = True,
+        max_expanded: int = 50,
     ) -> None:
         """
             retrieve -> graph expand -> answer a query
@@ -81,6 +82,7 @@ class RagCLI:
             str(query), index, driver, Path(data_directory), model,
             k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens),
             cache_dir=Path(cache_directory), show_progress=bool(show_progress),
+            max_expanded=int(max_expanded),
         )
 
         console = Console()
