@@ -29,7 +29,7 @@ def run(
     return the number of chunks processed
     """
     driver = neo4j_client.get_driver()
-    loader.ensure_schema(driver, database=database)
+    loader.ensure_graph_constraints(driver, database=database)
     model = extractor.load_model()
     generator = extractor.build_generator(model)
 
