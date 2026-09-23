@@ -90,7 +90,7 @@ flowchart LR
     sem[("Embeddings<br/>Matrix")]
     fusion["RRF Fusion"]
     seeds["Seed Chunks"]
-    neodb[("Neo4j<br/>traverse 1-2 hops")]
+    neodb[("Neo4j<br/>traverse 0-2 hops")]
     merged["Seed + Expanded<br/>Chunks"]
     llm["LLM"]
 
@@ -229,14 +229,14 @@ Connection handling: builds a driver from `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWO
 <details>
 <summary>📄 <code>loader.py</code></summary>
 
-Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity, `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges. The entity-merge logic (the actual entity-resolution mechanism) is covered in [Entity Resolution](#-entity-resolution).
+Writes one chunk's `ExtractionResult` into Neo4j: the `Chunk` node, each entity, `MENTIONED_IN` edges linking entities back to their chunk, and the extracted relationship edges, batched with `UNWIND` (one query per type label / relation type, not one per row). `ensure_schema()` adds the uniqueness constraint on `(:Entity {name_normalized})` and the `Chunk` span index. The entity-merge logic (the actual entity-resolution mechanism) is covered in [Entity Resolution](#-entity-resolution).
 
 </details>
 
 <details>
 <summary>📄 <code>traversal.py</code></summary>
 
-Takes a retriever's top-k results as seed chunks (lexical, semantic, or hybrid — this function doesn't care which), walks 1-2 hops outward through the graph from the entities mentioned in them, returns the *other* chunks reachable that way — chunks the original retrieval pass never found at all.
+Takes a retriever's top-k results as seed chunks (lexical, semantic, or hybrid — this function doesn't care which), walks 0-2 entity-to-entity hops outward from the entities mentioned in them (0 = another chunk mentioning the same entity), and returns the *other* chunks reachable that way, ranked closest-first then by how many seed entities reach them, capped at `max_expanded` after the seeds are excluded.
 
 </details>
 
@@ -281,9 +281,9 @@ Runtime orchestration: BM25 search for seed chunks → `traversal.py`'s graph ex
 <summary>📁 <strong>tests/</strong></summary>
 
 <details>
-<summary>📄 <code>test_extraction_quality.py</code> / <code>test_cache.py</code></summary>
+<summary>📄 <code>test_*.py</code></summary>
 
-Real pytest tests. The first asserts the identifier regex (`schema.py`) holds against *live* model output, not just unit-tested Pydantic validation; the second covers `cache.py`'s round-trip (save/load, hit/miss, corrupt-file recovery).
+Real pytest tests (`make test`). `test_extraction_quality.py` asserts the identifier regex (`schema.py`) holds against *live* model output; `test_cache.py` covers the cache round-trip across a reload, key-field misses, and corrupt-file recovery; `test_fusion.py` / `test_ranking.py` / `test_tokenizer.py` cover RRF's rank-only scoring, deterministic top-k tie-breaking, and identifier splitting; `test_traversal.py` builds an isolated marker-prefixed subgraph through `loader.py` in a live Neo4j and checks hop distances, ordering, and the cap (skips if Neo4j is down).
 
 </details>
 
@@ -304,7 +304,7 @@ Verifies entity-resolution normalization actually merges cosmetic name variants 
 <details>
 <summary>📄 <code>load_eval_subset.py</code></summary>
 
-One-off, resumable script: extracts + loads into Neo4j only the chunks that overlap a `test_queries.json` ground-truth span (a few hundred, not the full ~28,246-chunk corpus) — enough to run a real `lexical+graph` evaluation without days of extraction. Skips chunks already present on re-run.
+One-off, resumable script: extracts + loads into Neo4j only the chunks that overlap a `test_queries.json` ground-truth span (303, not the full ~28,246-chunk corpus) — enough to run a real graph evaluation without days of extraction. `--distractors N` also loads N randomly sampled non-answer chunks (seeded, deterministic) so the graph isn't made of answer chunks only. Skips chunks already present on re-run.
 
 </details>
 
@@ -373,7 +373,7 @@ Two things worth being precise about scope-wise:
 **Designing a closed relation-type taxonomy, instead of open-ended extraction.** The default approach in most GraphRAG tutorials including [Microsoft's original GraphRAG implementation](https://microsoft.github.io/graphrag/index/default_dataflow/), whose extraction prompt asks for a free-text `relationship_description` rather than a fixed type, is to let the model freely choose relationship labels from context `"calls"`, `"invokes"`, `"is called by"`, `"depends on"`. At small scale this looks harmless. At the scale needed for a usable knowledge graph, it becomes label proliferation: dozens of near-duplicate relation strings fragmenting what should be one queryable edge type, with no clean way back.
 
 ### Fixes:
-- Clustering/Deduplication process could be iplemented but it can be lossy and adds a whole extra pipeline stage.
+- Clustering/Deduplication process could be implemented but it can be lossy and adds a whole extra pipeline stage.
 
 - The alternative, restricting up front, risks losing genuinely useful nuance if the schema is too coarse. Resolved by defining a small, fixed enum of relation types (`CALLS`, `IMPORTS`, `INHERITS_FROM`, `RELATES_TO`, etc. see `RelationType` in `schema.py`) and enforcing them at generation time via the same FSM-based constrained decoding used throughout this project: the model is only ever able to emit a token sequence resolving to one of the valid types, trading some expressiveness for guaranteed schema consistency. The right tradeoff for a system meant to support reliable multi-hop traversal, less so for open-ended exploratory tagging.
 
@@ -395,7 +395,7 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 **The closed taxonomy above solves *type* consistency. It says nothing about *identity*.** `NodeType`/`RelationType` only guarantee that two independent extractions are *allowed* to agree a thing is a `Function` or a `Class` — they don't guarantee two mentions of the same real-world thing end up as the same graph node.
 
-**Our problem, concretely:** `graph/loader.py` currently merges entities by exact string match `MERGE` on `(label, name)`. Two chunks both extracting an entity named `"TokenizerGroup"` correctly collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it. That's the mechanism that makes cross-chunk graph connections happen at all. But exact match does nothing for `"Acme Corp"` vs `"Acme Corporation"` two mentions of the same real entity, spelled differently, silently become two separate nodes. No error, no warning just quietly fragmented graph structure, each half missing edges the other has.
+**Our problem, concretely:** `graph/loader.py` merges entities on a normalized name: `MERGE (e:Entity {name_normalized})`, where the name is lowercased with everything but `[a-z0-9]` stripped, and the extracted type (`Function`, `Class`, …) is added as an extra label. Two chunks extracting `"TokenizerGroup"` and `"tokenizer_group"` collapse into one shared node, with `MENTIONED_IN` edges from both chunks pointing at it — the mechanism that makes cross-chunk graph connections happen at all. Identity is deliberately the name alone, not `(label, name)`: the 0.6B model types the same identifier inconsistently (`Ray` as a `Module` in one chunk, a generic `Entity` in another), and keying on the label had silently split 78 names across 165 nodes before this was fixed and the graph migrated. What normalization can't do: `"Acme Corp"` vs `"Acme Corporation"` — two mentions of the same real entity, spelled differently, still become two separate nodes.
 
 [Aakash's writeup on entity resolution](https://www.aakashx.com/blog/knowledge-architecture-ontologies-entity-resolution-graphs/#5-18-graphrag) deterministic matching (exact ID/key equality) vs. probabilistic/fuzzy matching (similarity + confidence scoring) -> "probabilistic inference should not silently become authoritative master data." Avoid automatical merge of probable similar entities (uncertain inference). If merge is wrong the mistake is silent and harder to catch than a duplicate.
 
@@ -405,43 +405,52 @@ Each type earns its place by doing one specific, well-defined job — except one
 
 ![lexical vs semantic vs hybrid recall@k, live in the terminal](./assets/eval_demo.gif)
 
-*Live recall@k across all three retrieval arms **lexical** (BM25), **semantic** (`sentence-transformers` dense embeddings), and **hybrid** (Reciprocal Rank Fusion of both), each with an optional graph-expansion pass.*
+*Live recall@k across all three retrieval arms **lexical** (BM25), **semantic** (`sentence-transformers` dense embeddings), and **hybrid** (Reciprocal Rank Fusion of both). Recorded before the matched-budget and random-control arms below were added.*
 
-Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus, see `evaluation/evaluate.py`). A hit requires the retrieved chunk to cover at least 50% of the ground-truth answer span. All three retrieval modes ran against the same corpus, same questions, same graph.
+Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling project's dataset over the same vLLM 0.10.1 corpus, see `evaluation/evaluate.py`). A hit requires a retrieved chunk to cover at least 50% of the ground-truth answer span. Each retrieval mode is scored four ways:
 
-| k | lexical | +graph | semantic | +graph | hybrid | +graph |
-|---|---------|--------|----------|--------|--------|--------|
-| 3 | 0.665 | 0.710 | 0.355 | 0.440 | 0.565 | 0.620 |
-| 5 | 0.705 | 0.745 | 0.400 | 0.490 | 0.650 | 0.700 |
-| 10 | 0.785 | 0.815 | 0.515 | 0.610 | 0.725 | 0.770 |
+- **plain** — top-k chunks.
+- **+graph** — top-k seeds plus up to k graph-expanded chunks.
+- **@matched** — the same retriever, but given exactly as many chunks as +graph used for that question. This is the fair baseline: does the graph beat just retrieving more?
+- **+random** — top-k seeds plus as many chunks as +graph added, drawn at random from the graph's chunks. A leakage control, since the graph currently holds only answer-bearing chunks.
 
-Not the naive "hybrid wins" story:
+| k | lexical | +graph | @matched | +random | semantic | +graph | @matched | +random | hybrid | +graph | @matched | +random |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | 0.660 | 0.675 | 0.680 | 0.660 | 0.355 | 0.395 | 0.365 | 0.355 | 0.565 | 0.585 | 0.585 | 0.565 |
+| 5 | 0.705 | 0.720 | 0.715 | 0.705 | 0.400 | 0.450 | 0.420 | 0.400 | 0.650 | 0.680 | 0.675 | 0.650 |
+| 10 | 0.785 | 0.795 | 0.785 | 0.790 | 0.515 | 0.585 | 0.545 | 0.520 | 0.725 | 0.755 | 0.755 | 0.725 |
+
+Graph expansion added 1.9 / 3.3 / 6.9 chunks per question for lexical at k = 3 / 5 / 10 (semantic 1.2 / 2.3 / 5.5, hybrid 1.7 / 3.1 / 6.6).
+
+Not the naive "hybrid wins" or "graph wins" story:
 
 - **Lexical is the strongest single retriever here, by a clear margin.** This corpus is a codebase, ground truth hinges on exact identifiers and function names, exactly what BM25's term matching is built for.
 - **Semantic alone is meaningfully weaker** (0.355-0.515). It finds *conceptually* related content rather than exact-name matches, for the query `"enable lora"`, semantic surfaces `docs/features/lora.md` and LoRA-handling code in `worker/model_runner.py`, while lexical surfaces `tests/lora/test_tokenizer_group.py` and `transformers_utils/tokenizer_group.py` — genuinely different, both reasonable, but this eval's precise identifier-anchored ground truth rewards lexical's style more.
 - **Hybrid lands between the two, closer to lexical than to semantic — and never beats lexical alone.** RRF fusion pulls lexical's strong ranking down by averaging in semantic's weaker one; on a corpus this identifier-precise, fusing in a weaker retriever costs more than it adds.
-- **Graph expansion helps every single mode, at every k, with no exceptions** — the one fully consistent result in the whole table, and the strongest evidence here that the graph mechanism itself is sound, independent of which retriever finds the seed chunks.
+- **For lexical and hybrid, the graph is no better than retrieving more.** +graph vs @matched is within ±0.01 at every k (lexical even loses at k=3). An earlier version of this table showed lexical +0.045 from the graph; it compared k chunks against k + up to 50 expanded chunks, so most of that was extra budget, not the graph.
+- **Semantic is where the graph earns its place:** +0.03 to +0.04 over @matched at every k, a bit more on code (+0.04) than docs (+0.02 to +0.04). Embedding similarity misses identifier-anchored chunks; following shared entities from the seeds recovers some of them.
+- **Leakage control:** +random is within 0.005 of plain, so random picks from an answer-only graph don't explain the graph arm's hits. What this can't show is how well expansion holds up when non-answer chunks compete for the same slots — that needs `load_eval_subset.py --distractors N`, not yet run.
 
 <details>
 <summary>Per-split breakdown (docs vs code)</summary>
 
 **docs (n=101)**
 
-| k | lexical | +graph | semantic | +graph | hybrid | +graph |
-|---|---------|--------|----------|--------|--------|--------|
-| 3 | 0.772 | 0.812 | 0.455 | 0.554 | 0.594 | 0.663 |
-| 5 | 0.792 | 0.832 | 0.495 | 0.594 | 0.673 | 0.723 |
-| 10 | 0.851 | 0.881 | 0.564 | 0.673 | 0.743 | 0.792 |
+| k | lexical | +graph | @matched | semantic | +graph | @matched | hybrid | +graph | @matched |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 | 0.772 | 0.772 | 0.782 | 0.455 | 0.485 | 0.465 | 0.594 | 0.614 | 0.624 |
+| 5 | 0.792 | 0.792 | 0.802 | 0.495 | 0.525 | 0.505 | 0.673 | 0.693 | 0.703 |
+| 10 | 0.851 | 0.851 | 0.851 | 0.564 | 0.634 | 0.594 | 0.743 | 0.772 | 0.782 |
 
 **code (n=99)**
 
-| k | lexical | +graph | semantic | +graph | hybrid | +graph |
-|---|---------|--------|----------|--------|--------|--------|
-| 3 | 0.556 | 0.606 | 0.253 | 0.323 | 0.535 | 0.576 |
-| 5 | 0.616 | 0.657 | 0.303 | 0.384 | 0.626 | 0.677 |
-| 10 | 0.717 | 0.747 | 0.465 | 0.545 | 0.707 | 0.747 |
+| k | lexical | +graph | @matched | semantic | +graph | @matched | hybrid | +graph | @matched |
+|---|---|---|---|---|---|---|---|---|---|
+| 3 | 0.545 | 0.576 | 0.576 | 0.253 | 0.303 | 0.263 | 0.535 | 0.556 | 0.545 |
+| 5 | 0.616 | 0.646 | 0.626 | 0.303 | 0.374 | 0.333 | 0.626 | 0.667 | 0.646 |
+| 10 | 0.717 | 0.737 | 0.717 | 0.465 | 0.535 | 0.495 | 0.707 | 0.737 | 0.727 |
 
-Semantic's gap vs. lexical is proportionally wider on code than docs (k=3: code's semantic score is under half of lexical's, docs' is closer to 60%) — semantic similarity has less to latch onto in code identifiers (`kv_cache_coordinator`, `compressed_tensors`) than in prose, which has more natural-language structure the embedding model can actually use.
+On docs the graph never beats @matched for lexical or hybrid; on code it edges ahead (up to +0.02 for lexical, +0.02 for hybrid). Semantic's gap vs. lexical is proportionally wider on code than docs (k=3: code's semantic score is under half of lexical's, docs' is closer to 60%) — semantic similarity has less to latch onto in code identifiers (`kv_cache_coordinator`, `compressed_tensors`) than in prose, which has more natural-language structure the embedding model can actually use.
 
 </details>
 
@@ -449,7 +458,7 @@ Semantic's gap vs. lexical is proportionally wider on code than docs (k=3: code'
 
 ## ⚠️ Limitations
 
-- **The graph only covers 303 of the corpus's 28,246 chunks (299 loaded — 8 permanently failed truncation, see Challenges Faced).** Extraction runs one chunk at a time through Qwen3-0.6B (~60-90s/chunk observed). A full-corpus run is weeks of compute, not something to do by default. The graph was instead ingested only over the chunks that `evaluation/test_queries.json`'s ground-truth answers actually live in, enough to run a real evaluation but not a full production-scale graph. Lexical search, by contrast, runs over the entire corpus — see [Results](#-results) for how that scoping affects the comparison.
+- **The graph only covers 303 of the corpus's 28,246 chunks (299 loaded — 8 permanently failed truncation, see Challenges Faced).** Extraction runs one chunk at a time through Qwen3-0.6B (~60-90s/chunk observed). A full-corpus run is weeks of compute, not something to do by default. The graph was instead ingested only over the chunks that `evaluation/test_queries.json`'s ground-truth answers actually live in, enough to run a real evaluation but not a full production-scale graph. Lexical search, by contrast, runs over the entire corpus. Because every chunk in the graph is an answer chunk for some question, graph numbers here are an upper bound on what a full-corpus graph would show; `load_eval_subset.py --distractors 300` (~5-7h) is the planned test of that.
 
 ---
 
