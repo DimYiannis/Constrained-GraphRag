@@ -2,7 +2,6 @@ from pathlib import Path
 
 from src.cache import cache
 from src.chunking.chunk_corpus import read_text
-from src.extraction import extractor
 from src.graph import traversal
 from src.retrieval import lexical
 
@@ -12,7 +11,7 @@ DEFAULT_MAX_NEW_TOKENS = 512
 DEFAULT_CACHE_DIR = Path("data/cache")
 DEFAULT_MAX_EXPANDED = traversal.DEFAULT_MAX_EXPANDED
 
-PROMPT_TEMPLATE= """\
+PROMPT_TEMPLATE = """\
 Answer the question using only the context below. if the context\
 doesnt contain the answer, say so - do not make anything up.
 
@@ -22,12 +21,14 @@ Context:
 Question: {query}
 Answer:"""
 
+
 def _reslice(data_dir: Path, file_path: str, first: int, last: int) -> str:
     """
-        re-slice a chunk's text from the source file
+    re-slice a chunk's text from the source file
     """
-    text = read_text(data_dir / file_path) # join into one path
+    text = read_text(data_dir / file_path)  # join into one path
     return text[first:last] if text is not None else ""
+
 
 def answer_query(
     query: str,
@@ -43,35 +44,36 @@ def answer_query(
     max_expanded: int = DEFAULT_MAX_EXPANDED,
 ) -> dict:
     """
-        retrieve -> graph expand -> prompt -> answer
+    retrieve -> graph expand -> prompt -> answer
 
-        args:
-            query
-            index: bm25 index
-            dirver: Neo4j driver
-            data_dir: corpus root
-            model: model from extractor
-            k: bm25 top-k
-            hops: graph expansion depth
-            max_new_tokens
-            cache_dir: exact-match query cache location
-            show_progress: print a one-line status per stage (retrieval,
-                graph expansion, generation) as it happens, instead of
-                silence until the final result
-            max_expanded: cap on graph-expanded chunks (see
-                traversal.expand_chunks) protects against hub-entity
-                fanout blowing up the prompt
+    args:
+        query
+        index: bm25 index
+        dirver: Neo4j driver
+        data_dir: corpus root
+        model: model from extractor
+        k: bm25 top-k
+        hops: graph expansion depth
+        max_new_tokens
+        cache_dir: exact-match query cache location
+        show_progress: print a one-line status per stage (retrieval,
+            graph expansion, generation) as it happens, instead of
+            silence until the final result
+        max_expanded: cap on graph-expanded chunks (see
+            traversal.expand_chunks) protects against hub-entity
+            fanout blowing up the prompt
 
-        return:
-            {"answer": str, "sources": [(file_path, first, last, origin),...]}
-            origin is "lexical" (BM25 seed) or "graph" (graph-expanded),
-            lets a caller show which chunks the graph actually contributed.
+    return:
+        {"answer": str, "sources": [(file_path, first, last, origin),...]}
+        origin is "lexical" (BM25 seed) or "graph" (graph-expanded),
+        lets a caller show which chunks the graph actually contributed.
 
-        an identical (query, k, hops, max_new_tokens) call is served from
-        `cache_dir` without re-running retrieval/graph-expand/generation,
-        the model still has to be loaded by the caller either way, this
-        only skips the actual per-query work.
+    an identical (query, k, hops, max_new_tokens) call is served from
+    `cache_dir` without re-running retrieval/graph-expand/generation,
+    the model still has to be loaded by the caller either way, this
+    only skips the actual per-query work.
     """
+
     def status(message: str) -> None:
         if show_progress:
             print(message)
@@ -92,7 +94,9 @@ def answer_query(
 
     status(f"[2/3] expanding graph ({hops} hops)...")
     expand_input = [(fp, first, last) for fp, first, last, _origin in seed_chunks]
-    expanded = traversal.expand_chunks(driver, expand_input, hops=hops, max_expanded=max_expanded)
+    expanded = traversal.expand_chunks(
+        driver, expand_input, hops=hops, max_expanded=max_expanded
+    )
     expanded_chunks = [
         (chunk["file_path"], chunk["first"], chunk["last"], "graph")
         for chunk in expanded
