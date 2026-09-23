@@ -20,6 +20,9 @@ import random
 import time
 from pathlib import Path
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 from tqdm import tqdm
 from src.graph import neo4j_client, traversal
 from src.retrieval import lexical
@@ -266,6 +269,51 @@ def evaluate(
             driver.close()
 
 
+def _results_table(
+    k: int, entry: dict, modes: tuple[str, ...], use_graph: bool
+) -> Table:
+    """
+    one row per mode plus one per split under it
+    +graph and the gap are green when
+    the graph beats the budget-matched baseline, red when it loses
+    """
+    table = Table(title=f"recall@{k}")
+    table.add_column("mode")
+    table.add_column("plain", justify="right")
+    if use_graph:
+        for arm in GRAPH_ARMS:
+            table.add_column(arm, justify="right")
+        table.add_column("Δ vs @matched", justify="right")
+        table.add_column("graph added", justify="right")
+
+    for mode in modes:
+        rows = [
+            (mode, entry, f"{entry[f'{mode}+graph_added']:.1f}" if use_graph else "")
+        ]
+        rows += [
+            (f"  {split} (n={scores['n']})", scores, "")
+            for split, scores in entry["per_split"].items()
+        ]
+        for label, scores, added in rows:
+            cells = [label, f"{scores[mode]:.3f}"]
+            if use_graph:
+                graph = scores[f"{mode}+graph"]
+                delta = (
+                    round(graph - scores[f"{mode}@matched"], 3) or 0.0
+                )  # `or` drops -0.0
+                style = "green" if delta > 0 else "red" if delta < 0 else ""
+                cells += [
+                    Text(f"{graph:.3f}", style=style),
+                    f"{scores[f'{mode}@matched']:.3f}",
+                    f"{scores[f'{mode}+random']:.3f}",
+                    Text(f"{delta:+.3f}", style=style),
+                    added,
+                ]
+            table.add_row(*cells)
+        table.add_section()
+    return table
+
+
 def main(
     test_queries_path: str = str(DEFAULT_TEST_QUERIES),
     processed_directory: str = str(DEFAULT_PROCESSED_DIR),
@@ -299,7 +347,7 @@ def main(
         if isinstance(modes, tuple)
         else (str(modes).strip(),)
     )
-    suffixes = ("", *(GRAPH_ARMS if use_graph else ()))
+    console = Console()
 
     for kk, entry in evaluate(
         Path(test_queries_path),
@@ -313,21 +361,7 @@ def main(
         bool(show_progress),
         None if expand_budget is None else int(expand_budget),
     ):
-        print(f"--- recall@{kk} ---")
-        for mode in mode_values:
-            line = "  " + "  ".join(
-                f"{mode}{s}: {entry[f'{mode}{s}']:.3f}" for s in suffixes
-            )
-            if use_graph:
-                line += f"  (graph added {entry[f'{mode}+graph_added']:.1f} chunks/question)"
-            print(line)
-        for split, s in entry["per_split"].items():
-            parts = [
-                f"{mode}{suffix}={s[f'{mode}{suffix}']:.3f}"
-                for mode in mode_values
-                for suffix in suffixes
-            ]
-            print(f"    {split} (n={s['n']}): " + " ".join(parts))
+        console.print(_results_table(kk, entry, mode_values, bool(use_graph)))
         if reveal_delay > 0:
             time.sleep(reveal_delay)
 
