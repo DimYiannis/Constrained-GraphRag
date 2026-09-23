@@ -17,6 +17,7 @@ import bm25s
 from tqdm import tqdm
 
 from src.chunking.chunk_corpus import chunk, iter_corpus_files, read_text
+from src.retrieval.ranking import top_k
 
 from .tokenizer import strip_stopwords, tokenize
 
@@ -152,16 +153,8 @@ def search(index: Index, query: str, k: int) -> list[tuple[int, float]]:
     # Stopwords are dropped from the query but kept in the index: removing
     # them from the index would change every chunk length and every idf.
     terms = strip_stopwords(terms)
-    # bm25s errors if asked for more documents than it holds.
-    wanted = min(k, index.doc_count)
-    ids, scores = index.scorer.retrieve([terms], k=wanted, show_progress=False)
-    ranked = [
-        (int(chunk_id), float(score))
-        for chunk_id, score in zip(ids[0], scores[0])
-        if score > 0
-    ]
-    ranked.sort(key=lambda item: (-item[1], item[0]))
-    return ranked
+    scores = index.scorer.get_scores(terms)
+    return [(cid, score) for cid, score in top_k(scores, k) if score > 0]
 
 
 def save_index(index: Index, save_dir: Path) -> Path:
