@@ -16,35 +16,30 @@ def expand_chunks(
     max_expanded: int = DEFAULT_MAX_EXPANDED,
 ) -> list[dict]:
     """
-        from the retriever we get the seed chunks
-        from there we traverse through shared entities
-        to find related chunks that didn't lexically match
+    from the retriever we get the seed chunks
+    from there we traverse through shared entities
+    to find related chunks that didn't lexically match
 
-        distance 0 = the new chunk mentions the same entity as a seed
-        (the cross-chunk link loader.py's MERGE creates), distance n =
-        reached through n entity-to-entity edges.
+    args:
+        driver
+        chunks: seed chunks (file path, first, last)
+        hops: max entity-to-entity edges to follow
+        database
+        max_expanded: cap on newly-reached chunks a hub entity
+            (high fanout, something referenced everywhere) can
+            otherwise blow the expansion up to hundreds of chunks,
+            which balloons the prompt and tanks generation time for
+            no retrieval benefit
 
-        args:
-            driver
-            chunks: seed chunks (file path, first, last)
-            hops: max entity-to-entity edges to follow
-            database
-            max_expanded: cap on newly-reached chunks a hub entity
-                (high fanout, something referenced everywhere) can
-                otherwise blow the expansion up to hundreds of chunks,
-                which balloons the prompt and tanks generation time for
-                no retrieval benefit
-
-        return:
-            [{file_path, first, last, distance, support}, ...] for newly
-            reached chunks, best first: closest distance, then most seed
-            entities reaching it (support), then file_path/first for a
-            deterministic order. seed chunks are excluded before the cap
-            is applied, so the cap only counts new chunks
+    return:
+        [{file_path, first, last, distance, support}, ...] for newly
+        reached chunks, best first: closest distance, then most seed
+        entities reaching it (support), then file_path/first for a
+        deterministic order. seed chunks are excluded before the cap
+        is applied, so the cap only counts new chunks
     """
     seeds = [
-        {"file_path": fp, "first": first, "last": last}
-        for fp, first, last in chunks
+        {"file_path": fp, "first": first, "last": last} for fp, first, last in chunks
     ]
     seed_keys = [[fp, first, last] for fp, first, last in chunks]
 
