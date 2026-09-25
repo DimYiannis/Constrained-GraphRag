@@ -13,7 +13,7 @@
 
 ![answering a real query end-to-end, then again served instantly from cache](./assets/answer_cache_demo.gif)
 
-*The full pipeline retrieve → graph expand → prompt → answer, on a real question, run twice: once cold, once served from `cache/cache.py`. Same answer, **5.1x faster** the second time (the cached call still pays for loading the model).*
+*The full pipeline retrieve → graph expand → prompt → answer, on a real question, run twice: once cold, once served from `cache/cache.py`.*
 
 📖 [**RUNNING.md**](./RUNNING.md): full setup + command reference · 🐳 [**docker-setup.md**](./docker-setup.md): Neo4j via Docker
 
@@ -28,6 +28,7 @@
 Constrained GraphRAG combines lexical-first retrieval (BM25) with **schema-constrained knowledge graph extraction** over the **vLLM 0.10.1** codebase (~2,800 files: docs, Python source, plus C++/CUDA kernels and config files).
 
 The core idea, as a flow: each chunk is run through **Qwen3-0.6B**, constrained by [**Outlines**](https://github.com/dottxt-ai/outlines) so its output always matches a fixed schema.
+
 1. The LLM decides which entities relate and how, Outlines just guarantees that decision comes out structurally valid.
 2. Extracted entities and relationships are loaded into **Neo4j** as a graph, connecting chunks through the entities they share.
 3. BM25 search at query time, BM25 finds the chunks that lexically match.
@@ -119,8 +120,6 @@ The evaluation (`evaluation/evaluate.py`) runs the same graph expansion on top o
  The two diagrams above show data flowing between modules, this is the actual division of labor behind that flow, offline and online pieces both:
 
 **The corpus is chunked (`chunking/`) → each chunk runs through `extractor.py`, where the LM creates entity-relationships *within* that one chunk → `loader.py`'s `MERGE` incidentally connects *across* chunks by reusing shared entity names → *(at query time)* BM25 (`retrieval/lexical/`) finds lexically-matching seed chunks → `traversal.py`'s `MATCH` *reads* the already-existing connections, expanding outward from those seeds to pull in chunks BM25 never lexically matched.**
-
-
 
 ---
 
@@ -397,7 +396,8 @@ Two things worth being precise about scope-wise:
 
 **Designing a closed relation-type taxonomy, instead of open-ended extraction.** The default approach in most GraphRAG tutorials including [Microsoft's original GraphRAG implementation](https://microsoft.github.io/graphrag/index/default_dataflow/), whose extraction prompt asks for a free-text `relationship_description` rather than a fixed type, is to let the model freely choose relationship labels from context `"calls"`, `"invokes"`, `"is called by"`, `"depends on"`. At small scale this looks harmless. At the scale needed for a usable knowledge graph, it becomes label proliferation: dozens of near-duplicate relation strings fragmenting what should be one queryable edge type, with no clean way back.
 
-### Fixes:
+### Fixes
+
 - Clustering/Deduplication process could be implemented but it can be lossy and adds a whole extra pipeline stage.
 
 - The alternative, restricting up front, risks losing genuinely useful nuance if the schema is too coarse. Resolved by defining a small, fixed enum of relation types (`CALLS`, `IMPORTS`, `INHERITS_FROM`, `DEFINED_IN`, `RELATES_TO`, `REFERENCES`, see `ExtractableRelationType` in `schema.py`) and enforcing them at generation time via the same FSM-based constrained decoding used throughout this project: the model is only ever able to emit a token sequence resolving to one of the valid types, trading some expressiveness for guaranteed schema consistency. The right tradeoff for a system meant to support reliable multi-hop traversal, less so for open-ended exploratory tagging.
@@ -411,7 +411,8 @@ Each type earns its place by doing one specific, well-defined job — except one
 - **`REFERENCES`** — a chunk names a specific function, class or module defined elsewhere without calling it. Mainly the deliberate cross-modal link (a doc chunk naming code, connecting documentation to code), though code chunks can emit it too.
 - **`RELATES_TO`** — "these two entities are related somehow, but not in a way any of the specific types capture." Every other type above is precise *because* this one exists to absorb what doesn't fit without it, ambiguous cases would pressure the specific types to loosen their own definitions instead.
 
-*What I'd do differently:* design the enum with an explicit versioning/extension process from the start, rather than treating it as fixed. A closed schema solves label proliferation, but a genuinely new relationship type the initial design didn't anticipate has nowhere to go except a catch-all like `RELATES_TO`, which just relocates the fuzziness instead of removing it. 
+*What I'd do differently:* design the enum with an explicit versioning/extension process from the start, rather than treating it as fixed. A closed schema solves label proliferation, but a genuinely new relationship type the initial design didn't anticipate has nowhere to go except a catch-all like `RELATES_TO`, which just relocates the fuzziness instead of removing it.
+
 - Better: periodically review catch-all usage as a signal for when the enum itself needs a deliberate, reviewed addition — schema evolution as a governed process, not a binary choice between fully open and fully frozen.
 
 ---
@@ -442,7 +443,7 @@ Recall@k on `evaluation/test_queries.json` (200 questions, reused from a sibling
 - **+random** — top-k seeds plus as many chunks as +graph added, drawn at random from the graph's chunks. A leakage control, since almost every chunk in the graph overlaps a ground-truth answer span.
 
 | k | lexical | +graph | @matched | +random | semantic | +graph | @matched | +random | hybrid | +graph | @matched | +random |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 3 | 0.660 | 0.675 | 0.680 | 0.660 | 0.355 | 0.395 | 0.365 | 0.355 | 0.565 | 0.585 | 0.585 | 0.565 |
 | 5 | 0.705 | 0.720 | 0.715 | 0.705 | 0.400 | 0.450 | 0.420 | 0.400 | 0.650 | 0.680 | 0.675 | 0.650 |
 | 10 | 0.785 | 0.795 | 0.785 | 0.790 | 0.515 | 0.585 | 0.545 | 0.520 | 0.725 | 0.755 | 0.755 | 0.725 |
@@ -464,7 +465,7 @@ Not the naive "hybrid wins" or "graph wins" story:
 **docs (n=101)**
 
 | k | lexical | +graph | @matched | semantic | +graph | @matched | hybrid | +graph | @matched |
-|---|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 3 | 0.772 | 0.772 | 0.782 | 0.455 | 0.485 | 0.465 | 0.594 | 0.614 | 0.624 |
 | 5 | 0.792 | 0.792 | 0.802 | 0.495 | 0.525 | 0.505 | 0.673 | 0.693 | 0.703 |
 | 10 | 0.851 | 0.851 | 0.851 | 0.564 | 0.634 | 0.594 | 0.743 | 0.772 | 0.782 |
@@ -472,7 +473,7 @@ Not the naive "hybrid wins" or "graph wins" story:
 **code (n=99)**
 
 | k | lexical | +graph | @matched | semantic | +graph | @matched | hybrid | +graph | @matched |
-|---|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 3 | 0.545 | 0.576 | 0.576 | 0.253 | 0.303 | 0.263 | 0.535 | 0.556 | 0.545 |
 | 5 | 0.616 | 0.646 | 0.626 | 0.303 | 0.374 | 0.333 | 0.626 | 0.667 | 0.646 |
 | 10 | 0.717 | 0.737 | 0.717 | 0.465 | 0.535 | 0.495 | 0.707 | 0.737 | 0.727 |
