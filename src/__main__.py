@@ -3,14 +3,14 @@ from pathlib import Path
 
 import fire
 from dotenv import load_dotenv
-
+from src.cache import cache
 from rich.console import Console
 from rich.table import Table
 
 load_dotenv()
 
+
 class RagCLI:
-    
     def index(
         self,
         max_chunk_size: int = 2000,
@@ -18,7 +18,7 @@ class RagCLI:
         save_directory: str = "data/processed",
     ) -> None:
         """
-            chunk the corpus and build the inverted index
+        chunk the corpus and build the inverted index
         """
         from src.retrieval import lexical
 
@@ -38,7 +38,7 @@ class RagCLI:
         processed_directory: str = "data/processed",
     ) -> None:
         """
-            print the top-k BM25 results for a single query
+        print the top-k BM25 results for a single query
         """
         from src.retrieval import lexical
 
@@ -49,11 +49,8 @@ class RagCLI:
             return
         for rank, (chunk_id, score) in enumerate(ranked, start=1):
             file_path, first, last, _ = index.chunks[chunk_id]
-            print(
-                f"{rank}. {file_path} "
-                f"[{first}:{last}] score={score:.2f}"
-            )
-    
+            print(f"{rank}. {file_path} [{first}:{last}] score={score:.2f}")
+
     def answer(
         self,
         query,
@@ -67,23 +64,43 @@ class RagCLI:
         max_expanded: int = 50,
     ) -> None:
         """
-            retrieve -> graph expand -> answer a query
+        retrieve -> graph expand -> answer a query
         """
         from src.extraction import extractor
         from src.graph import neo4j_client
         from src.pipeline import query_pipeline
         from src.retrieval import lexical
 
-        index = lexical.load_index(Path(processed_directory))
-        driver = neo4j_client.get_driver()
-        model = extractor.load_model()
+        query = str(query)
+        k, hops, max_new_tokens = int(k), int(hops), int(max_new_tokens)
+        cache_dir = Path(cache_directory)
 
-        result = query_pipeline.answer_query(
-            str(query), index, driver, Path(data_directory), model,
-            k=int(k), hops=int(hops), max_new_tokens=int(max_new_tokens),
-            cache_dir=Path(cache_directory), show_progress=bool(show_progress),
-            max_expanded=int(max_expanded),
+        result = cache.get_cached_result(
+            cache.load_cache(cache_dir), query, k, hops, max_new_tokens
         )
+        if result is not None:
+            if show_progress:
+                print("[cache] hit - skipping model load, retrieval, and generation")
+        else:
+            index = lexical.load_index(Path(processed_directory))
+            driver = neo4j_client.get_driver()
+            model = extractor.load_model()
+            try:
+                result = query_pipeline.answer_query(
+                    query,
+                    index,
+                    driver,
+                    Path(data_directory),
+                    model,
+                    k=k,
+                    hops=hops,
+                    max_new_tokens=max_new_tokens,
+                    cache_dir=cache_dir,
+                    show_progress=bool(show_progress),
+                    max_expanded=int(max_expanded),
+                )
+            finally:
+                driver.close()
 
         console = Console()
 
@@ -98,7 +115,6 @@ class RagCLI:
         console.print()
         console.print("[bold]Answer:[/bold]")
         console.print(result["answer"])
-        driver.close()
 
 
 def main() -> None:
@@ -115,4 +131,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
